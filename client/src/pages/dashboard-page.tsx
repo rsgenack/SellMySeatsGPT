@@ -18,6 +18,7 @@ export default function DashboardPage() {
   const { data: payments = [] } = useQuery<Payment[]>({ queryKey: ["/api/payments"] });
   const { data: pendingTickets = [] } = useQuery<PendingTicket[]>({ 
     queryKey: ["/api/pending-tickets"],
+    refetchInterval: 10000, // Refresh every 10 seconds to check for new pending tickets
   });
   const { toast } = useToast();
 

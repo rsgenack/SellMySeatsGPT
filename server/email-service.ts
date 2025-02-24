@@ -46,6 +46,7 @@ export class EmailService {
       const toAddress = parsed.to?.text || '';
 
       // Extract username from the unique email
+      console.log('Processing email sent to:', toAddress);
       const uniqueEmailMatch = toAddress.match(/(.+)\.([a-f0-9]{12})@seatxfer.com/);
       if (!uniqueEmailMatch) {
         console.log('Invalid email address format:', toAddress);
@@ -63,8 +64,11 @@ export class EmailService {
         return;
       }
 
+      console.log('Found user:', user.username, 'for email:', toAddress);
+
       // Extract ticket information from email
       const extractedData = this.extractTicketInfo(parsed.text || '', parsed.subject || '');
+      console.log('Extracted ticket data:', extractedData);
 
       // Create pending ticket
       await db.insert(pendingTickets).values({
@@ -76,7 +80,7 @@ export class EmailService {
         status: 'pending',
       });
 
-      console.log('Successfully processed ticket email for user:', user.username);
+      console.log('Successfully created pending ticket for user:', user.username);
     } catch (error) {
       console.error('Error processing email:', error);
     }
