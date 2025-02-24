@@ -7,7 +7,7 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   email: text("email").notNull(),
-  uniqueEmail: text("unique_email"),  // Temporarily allow NULL
+  uniqueEmail: text("unique_email"),  // Make it optional during migration
 });
 
 export const tickets = pgTable("tickets", {
