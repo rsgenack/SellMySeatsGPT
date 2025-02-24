@@ -1,5 +1,5 @@
 import { simpleParser } from 'mailparser';
-import { createConnection } from 'imap';
+import Imap from 'imap';
 import { storage } from './storage';
 import { db } from './db';
 import { pendingTickets, users } from '@shared/schema';
@@ -13,13 +13,23 @@ interface EmailConfig {
   tls: boolean;
 }
 
+interface ExtractedTicketData {
+  eventName: string;
+  eventDate: string;
+  venue: string;
+  section: string;
+  row: string;
+  seat: string;
+  price: number;
+}
+
 export class EmailService {
   private config: EmailConfig;
-  private imap: any;
+  private imap: Imap;
 
   constructor(config: EmailConfig) {
     this.config = config;
-    this.imap = createConnection(config);
+    this.imap = new Imap(config);
   }
 
   async connect() {
@@ -31,67 +41,120 @@ export class EmailService {
   }
 
   async processEmail(email: any) {
-    const parsed = await simpleParser(email);
-    const toAddress = parsed.to?.text || '';
+    try {
+      const parsed = await simpleParser(email);
+      const toAddress = parsed.to?.text || '';
 
-    // Extract username from the unique email (format: username.random@seatxfer.com)
-    const uniqueEmailMatch = toAddress.match(/(.+)\.([a-f0-9]{12})@seatxfer\.com/);
-    if (!uniqueEmailMatch) return;
+      // Extract username from the unique email
+      const uniqueEmailMatch = toAddress.match(/(.+)\.([a-f0-9]{12})@seatxfer\.com/);
+      if (!uniqueEmailMatch) {
+        console.log('Invalid email address format:', toAddress);
+        return;
+      }
 
-    // Find the user by unique email
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.uniqueEmail, toAddress));
+      // Find the user by unique email
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.uniqueEmail, toAddress));
 
-    if (!user) return;
+      if (!user) {
+        console.log('User not found for email:', toAddress);
+        return;
+      }
 
-    // Extract ticket information from email
-    const extractedData = this.extractTicketInfo(parsed.text || '');
+      // Extract ticket information from email
+      const extractedData = this.extractTicketInfo(parsed.text || '', parsed.subject || '');
 
-    // Create pending ticket
-    await db.insert(pendingTickets).values({
-      userId: user.id,
-      emailSubject: parsed.subject || '',
-      emailFrom: parsed.from?.text || '',
-      rawEmailData: parsed,
-      extractedData,
-      status: 'pending',
-    });
+      // Create pending ticket
+      await db.insert(pendingTickets).values({
+        userId: user.id,
+        emailSubject: parsed.subject || '',
+        emailFrom: parsed.from?.text || '',
+        rawEmailData: parsed,
+        extractedData,
+        status: 'pending',
+      });
+
+      console.log('Successfully processed ticket email for user:', user.username);
+    } catch (error) {
+      console.error('Error processing email:', error);
+    }
   }
 
-  private extractTicketInfo(emailText: string) {
-    // This is a placeholder for ticket information extraction logic
-    // You would need to implement specific parsing based on the email format
+  private extractTicketInfo(emailText: string, subject: string): ExtractedTicketData {
+    // Common patterns in ticket forwarding emails
+    const patterns = {
+      eventName: /Event:\s*([^\n]+)/i,
+      eventDate: /Date:\s*([^\n]+)/i,
+      venue: /Venue:\s*([^\n]+)/i,
+      section: /Section:\s*([^\n]+)/i,
+      row: /Row:\s*([^\n]+)/i,
+      seat: /Seat(?:s)?:\s*([^\n]+)/i,
+      price: /Price:\s*\$?(\d+(?:\.\d{2})?)/i,
+    };
+
+    // Try to extract information from the email body
+    const extracted: Partial<ExtractedTicketData> = {};
+
+    for (const [key, pattern] of Object.entries(patterns)) {
+      const match = emailText.match(pattern);
+      if (match) {
+        extracted[key as keyof ExtractedTicketData] = match[1].trim();
+      }
+    }
+
+    // If event name is not found in the patterns, use the subject line
+    if (!extracted.eventName && subject) {
+      extracted.eventName = subject.replace(/FWD?: /i, '').trim();
+    }
+
+    // Convert price to number if found
+    if (extracted.price) {
+      extracted.price = parseFloat(extracted.price);
+    }
+
+    // Return extracted data with fallbacks
     return {
-      eventName: '',
-      eventDate: '',
-      venue: '',
-      section: '',
-      row: '',
-      seat: '',
-      price: 0,
+      eventName: extracted.eventName || 'Unknown Event',
+      eventDate: extracted.eventDate || 'TBD',
+      venue: extracted.venue || 'Unknown Venue',
+      section: extracted.section || '',
+      row: extracted.row || '',
+      seat: extracted.seat || '',
+      price: extracted.price || 0,
     };
   }
 
   async startListening() {
-    await this.connect();
+    try {
+      await this.connect();
 
-    this.imap.openBox('INBOX', false, (err: Error, box: any) => {
-      if (err) throw err;
+      this.imap.openBox('INBOX', false, (err: Error, box: any) => {
+        if (err) {
+          console.error('Error opening mailbox:', err);
+          return;
+        }
 
-      this.imap.on('mail', (numNew: number) => {
-        // Process new emails
-        const fetch = this.imap.seq.fetch(box.messages.total - numNew + 1 + ':*', {
-          bodies: '',
-        });
+        console.log('Successfully connected to email inbox');
 
-        fetch.on('message', (msg: any) => {
-          msg.on('body', (stream: any) => {
-            this.processEmail(stream);
+        this.imap.on('mail', (numNew: number) => {
+          console.log(`Processing ${numNew} new emails`);
+          const fetch = this.imap.seq.fetch(box.messages.total - numNew + 1 + ':*', {
+            bodies: '',
+          });
+
+          fetch.on('message', (msg: any) => {
+            msg.on('body', (stream: any) => {
+              this.processEmail(stream).catch(error => {
+                console.error('Error processing message:', error);
+              });
+            });
           });
         });
       });
-    });
+    } catch (error) {
+      console.error('Error starting email listener:', error);
+    }
   }
 }
