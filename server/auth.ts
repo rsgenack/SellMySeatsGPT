@@ -28,6 +28,11 @@ async function comparePasswords(supplied: string, stored: string) {
   return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
+function generateUniqueEmail(username: string): string {
+  const randomStr = randomBytes(6).toString('hex');
+  return `${username}.${randomStr}@sellmyseats.com`;
+}
+
 export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET!,
@@ -64,9 +69,11 @@ export function setupAuth(app: Express) {
       return res.status(400).send("Username already exists");
     }
 
+    const uniqueEmail = generateUniqueEmail(req.body.username);
     const user = await storage.createUser({
       ...req.body,
       password: await hashPassword(req.body.password),
+      uniqueEmail,
     });
 
     req.login(user, (err) => {

@@ -8,7 +8,7 @@ import TicketForm from "@/components/tickets/ticket-form";
 import TicketList from "@/components/tickets/ticket-list";
 import StatsCards from "@/components/dashboard/stats-cards";
 import { Link } from "wouter";
-import { LogOut } from "lucide-react";
+import { LogOut, Mail } from "lucide-react";
 
 export default function DashboardPage() {
   const { user, logoutMutation } = useAuth();
@@ -42,6 +42,23 @@ export default function DashboardPage() {
       </nav>
 
       <main className="container mx-auto py-8 px-4">
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Your Ticket Submission Email</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-2 text-lg">
+              <Mail className="h-5 w-5" />
+              <code className="bg-muted px-2 py-1 rounded">
+                {user?.uniqueEmail}
+              </code>
+            </div>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Send your tickets to this email address. We'll process them and list them for sale.
+            </p>
+          </CardContent>
+        </Card>
+
         <StatsCards tickets={tickets} payments={payments} />
 
         <Tabs defaultValue="listings" className="mt-8">
@@ -49,7 +66,7 @@ export default function DashboardPage() {
             <TabsTrigger value="listings">My Listings</TabsTrigger>
             <TabsTrigger value="new">New Listing</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="listings">
             <Card>
               <CardHeader>
@@ -60,7 +77,7 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="new">
             <Card>
               <CardHeader>
