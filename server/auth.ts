@@ -30,7 +30,7 @@ async function comparePasswords(supplied: string, stored: string) {
 
 function generateUniqueEmail(username: string): string {
   const randomStr = randomBytes(6).toString('hex');
-  return `${username}.${randomStr}@seatxfer.com`;
+  return `${username}.${randomStr}@sellmyseats.com`;
 }
 
 export function setupAuth(app: Express) {
