@@ -8,12 +8,24 @@ import TicketForm from "@/components/tickets/ticket-form";
 import TicketList from "@/components/tickets/ticket-list";
 import StatsCards from "@/components/dashboard/stats-cards";
 import { Link } from "wouter";
-import { LogOut, Mail } from "lucide-react";
+import { LogOut, Mail, Copy } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function DashboardPage() {
   const { user, logoutMutation } = useAuth();
   const { data: tickets = [] } = useQuery<Ticket[]>({ queryKey: ["/api/tickets"] });
   const { data: payments = [] } = useQuery<Payment[]>({ queryKey: ["/api/payments"] });
+  const { toast } = useToast();
+
+  const handleCopyEmail = () => {
+    if (user?.uniqueEmail) {
+      navigator.clipboard.writeText(user.uniqueEmail);
+      toast({
+        title: "Email Copied",
+        description: "The email address has been copied to your clipboard.",
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -49,9 +61,18 @@ export default function DashboardPage() {
           <CardContent>
             <div className="flex items-center gap-2 text-lg">
               <Mail className="h-5 w-5" />
-              <code className="bg-muted px-2 py-1 rounded">
+              <code className="bg-muted px-2 py-1 rounded flex-1">
                 {user?.uniqueEmail}
               </code>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCopyEmail}
+                className="ml-2"
+              >
+                <Copy className="h-4 w-4 mr-2" />
+                Copy
+              </Button>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">
               Send your tickets to this email address. We'll process them and list them for sale.
