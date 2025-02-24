@@ -21,6 +21,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(201).json(ticket);
   });
 
+  // Pending Tickets
+  app.get("/api/pending-tickets", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const pendingTickets = await storage.getPendingTickets(req.user.id);
+    res.json(pendingTickets);
+  });
+
+  app.post("/api/pending-tickets/:id/confirm", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const ticketData = insertTicketSchema.parse(req.body);
+    const ticket = await storage.confirmPendingTicket(parseInt(req.params.id), {
+      ...ticketData,
+      userId: req.user.id,
+    });
+    res.json(ticket);
+  });
+
   // Payments
   app.get("/api/payments", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);

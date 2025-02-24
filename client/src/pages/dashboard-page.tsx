@@ -1,11 +1,12 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
-import { Ticket, Payment } from "@shared/schema";
+import { Ticket, Payment, PendingTicket } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TicketForm from "@/components/tickets/ticket-form";
 import TicketList from "@/components/tickets/ticket-list";
+import PendingTicketList from "@/components/tickets/pending-ticket-list";
 import StatsCards from "@/components/dashboard/stats-cards";
 import { Link } from "wouter";
 import { LogOut, Mail, Copy } from "lucide-react";
@@ -15,6 +16,9 @@ export default function DashboardPage() {
   const { user, logoutMutation } = useAuth();
   const { data: tickets = [] } = useQuery<Ticket[]>({ queryKey: ["/api/tickets"] });
   const { data: payments = [] } = useQuery<Payment[]>({ queryKey: ["/api/payments"] });
+  const { data: pendingTickets = [] } = useQuery<PendingTicket[]>({ 
+    queryKey: ["/api/pending-tickets"],
+  });
   const { toast } = useToast();
 
   const handleCopyEmail = () => {
@@ -79,6 +83,17 @@ export default function DashboardPage() {
             </p>
           </CardContent>
         </Card>
+
+        {pendingTickets.length > 0 && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>Pending Tickets from Email</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <PendingTicketList tickets={pendingTickets} />
+            </CardContent>
+          </Card>
+        )}
 
         <StatsCards tickets={tickets} payments={payments} />
 

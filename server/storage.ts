@@ -1,4 +1,4 @@
-import { users, tickets, payments, type User, type InsertUser, type Ticket, type InsertTicket, type Payment } from "@shared/schema";
+import { users, tickets, payments, pendingTickets, type User, type InsertUser, type Ticket, type InsertTicket, type Payment, type PendingTicket } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 import session from "express-session";
@@ -14,6 +14,8 @@ export interface IStorage {
   getTickets(userId: number): Promise<Ticket[]>;
   createTicket(userId: number, ticket: InsertTicket): Promise<Ticket>;
   getPayments(userId: number): Promise<Payment[]>;
+  getPendingTickets(userId: number): Promise<PendingTicket[]>;
+  confirmPendingTicket(pendingTicketId: number, ticketData: InsertTicket): Promise<Ticket>;
   sessionStore: session.Store;
 }
 
@@ -60,6 +62,30 @@ export class DatabaseStorage implements IStorage {
 
   async getPayments(userId: number): Promise<Payment[]> {
     return await db.select().from(payments).where(eq(payments.userId, userId));
+  }
+
+  async getPendingTickets(userId: number): Promise<PendingTicket[]> {
+    return await db
+      .select()
+      .from(pendingTickets)
+      .where(eq(pendingTickets.userId, userId))
+      .orderBy(pendingTickets.createdAt);
+  }
+
+  async confirmPendingTicket(pendingTicketId: number, ticketData: InsertTicket): Promise<Ticket> {
+    // Update pending ticket status
+    await db
+      .update(pendingTickets)
+      .set({ status: 'confirmed' })
+      .where(eq(pendingTickets.id, pendingTicketId));
+
+    // Create confirmed ticket
+    const [newTicket] = await db
+      .insert(tickets)
+      .values(ticketData)
+      .returning();
+
+    return newTicket;
   }
 }
 
