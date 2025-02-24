@@ -85,16 +85,20 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {pendingTickets.length > 0 && (
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle>Pending Tickets from Email</CardTitle>
-            </CardHeader>
-            <CardContent>
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Pending Tickets from Email</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {pendingTickets.length > 0 ? (
               <PendingTicketList tickets={pendingTickets} />
-            </CardContent>
-          </Card>
-        )}
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                No pending tickets to review. Forward your tickets to your unique email address above and they will appear here.
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         <StatsCards tickets={tickets} payments={payments} />
 
