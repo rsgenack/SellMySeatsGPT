@@ -54,7 +54,7 @@ export class DatabaseStorage implements IStorage {
       .values({
         ...ticket,
         userId,
-        status: "pending",
+        status: "active", 
       })
       .returning();
     return newTicket;
