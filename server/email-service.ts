@@ -46,7 +46,7 @@ export class EmailService {
       const toAddress = parsed.to?.text || '';
 
       // Extract username from the unique email
-      const uniqueEmailMatch = toAddress.match(/(.+)\.([a-f0-9]{12})@seatxfer\.com/);
+      const uniqueEmailMatch = toAddress.match(/(.+)\.([a-f0-9]{12})@seatxfer.com/);
       if (!uniqueEmailMatch) {
         console.log('Invalid email address format:', toAddress);
         return;
