@@ -11,15 +11,18 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 const emailSetupSchema = z.object({
-  user: z.string().email("Please enter a valid email address"),
-  password: z.string().min(1, "Password is required"),
-  host: z.string().min(1, "IMAP host is required"),
-  port: z.coerce.number().min(1, "Port is required"),
+  user: z.string().email("Please enter a valid email address (forwarding@sellmyseats.com)"),
+  password: z.string().min(1, "Gmail App Password is required"),
+  host: z.string().min(1, "IMAP host server address is required"),
+  port: z.coerce.number().min(1, "IMAP port number is required"),
   tls: z.boolean().default(true),
 });
 
@@ -32,6 +35,9 @@ export default function EmailSetupForm() {
     resolver: zodResolver(emailSetupSchema),
     defaultValues: {
       tls: true,
+      port: 993,
+      host: "imap.gmail.com",
+      user: "forwarding@sellmyseats.com"
     },
   });
 
@@ -42,7 +48,7 @@ export default function EmailSetupForm() {
     onSuccess: () => {
       toast({
         title: "Email Setup Complete",
-        description: "Your email account has been connected successfully.",
+        description: "Your Gmail account has been connected successfully.",
       });
     },
     onError: (error: Error) => {
@@ -79,15 +85,31 @@ export default function EmailSetupForm() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <Alert className="mb-6">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          You need to use a Gmail App Password, not your regular Gmail password. 
+          To generate one:
+          <ol className="mt-2 ml-4 list-decimal">
+            <li>Go to your Google Account settings</li>
+            <li>Navigate to Security &amp; 2-Step Verification</li>
+            <li>Scroll to App passwords and generate a new one</li>
+          </ol>
+        </AlertDescription>
+      </Alert>
+
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
           name="user"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Email Address</FormLabel>
+              <FormDescription>
+                This is your Gmail address for receiving ticket emails (forwarding@sellmyseats.com)
+              </FormDescription>
               <FormControl>
-                <Input placeholder="your.email@example.com" {...field} />
+                <Input {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -99,7 +121,11 @@ export default function EmailSetupForm() {
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email Password</FormLabel>
+              <FormLabel>Gmail App Password</FormLabel>
+              <FormDescription>
+                Use the 16-character App Password generated from your Google Account settings.
+                Regular Gmail password will not work.
+              </FormDescription>
               <FormControl>
                 <Input type="password" {...field} />
               </FormControl>
@@ -114,8 +140,11 @@ export default function EmailSetupForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>IMAP Host</FormLabel>
+              <FormDescription>
+                For Gmail, this should always be imap.gmail.com
+              </FormDescription>
               <FormControl>
-                <Input placeholder="imap.gmail.com" {...field} />
+                <Input {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -128,8 +157,11 @@ export default function EmailSetupForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>IMAP Port</FormLabel>
+              <FormDescription>
+                For Gmail, this should always be 993 (SSL/TLS port)
+              </FormDescription>
               <FormControl>
-                <Input type="number" placeholder="993" {...field} />
+                <Input type="number" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

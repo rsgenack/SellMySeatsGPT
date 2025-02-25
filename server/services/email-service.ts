@@ -69,13 +69,30 @@ export class EmailService {
 
   async testConnection(): Promise<void> {
     try {
-      console.log('Testing IMAP connection...');
+      console.log('Testing IMAP connection with settings:', {
+        user: this.imap.user,
+        host: this.imap.host,
+        port: this.imap.port,
+        tls: this.imap.options.tls
+      });
+
       await this.promisifyImapOpen();
       console.log('IMAP connection test successful');
       this.imap.end();
-    } catch (error) {
+    } catch (error: any) {
       console.error('IMAP connection test failed:', error);
-      throw new Error(`Failed to connect to IMAP server: ${error.message}`);
+      // Enhance error message based on common IMAP issues
+      let errorMessage = 'Failed to connect to IMAP server: ';
+      if (error.source === 'authentication') {
+        errorMessage += 'Invalid username or password';
+      } else if (error.code === 'ECONNREFUSED') {
+        errorMessage += 'Could not connect to server (connection refused)';
+      } else if (error.code === 'ENOTFOUND') {
+        errorMessage += 'Could not resolve hostname';
+      } else {
+        errorMessage += error.message;
+      }
+      throw new Error(errorMessage);
     }
   }
 
