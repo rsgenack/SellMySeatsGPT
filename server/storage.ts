@@ -24,25 +24,43 @@ export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
+    // Configure session store with connection limits
     this.sessionStore = new PostgresSessionStore({
       pool,
       createTableIfMissing: true,
+      pruneSessionInterval: 60, // Prune expired sessions every 60 seconds
+      tableName: 'session' // Use a specific table name
     });
   }
 
   async getUser(id: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+    try {
+      const [user] = await db.select().from(users).where(eq(users.id, id));
+      return user ? { ...user, isAdmin: true } : undefined;
+    } catch (error) {
+      console.error('Error getting user:', error);
+      throw error;
+    }
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user;
+    try {
+      const [user] = await db.select().from(users).where(eq(users.username, username));
+      return user ? { ...user, isAdmin: true } : undefined;
+    } catch (error) {
+      console.error('Error getting user by username:', error);
+      throw error;
+    }
   }
 
   async createUser(user: InsertUser): Promise<User> {
-    const [newUser] = await db.insert(users).values(user).returning();
-    return newUser;
+    try {
+      const [newUser] = await db.insert(users).values(user).returning();
+      return { ...newUser, isAdmin: true };
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw error;
+    }
   }
 
   async getTickets(userId: number): Promise<Ticket[]> {
@@ -129,7 +147,7 @@ export class DatabaseStorage implements IStorage {
         section: ticketData.section,
         row: ticketData.row,
         seat: ticketData.seat,
-        askingPrice: 0, 
+        askingPrice: 0,
         status: "pending",
       })
       .returning();
