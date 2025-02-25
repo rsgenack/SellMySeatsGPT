@@ -20,6 +20,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
+      console.log('Testing IMAP connection with settings:', {
+        user: req.body.user,
+        host: req.body.host,
+        port: req.body.port,
+        tls: true
+      });
+
       // Test the connection first
       const emailService = EmailService.getInstance({
         user: req.body.user,
@@ -40,7 +47,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       process.env.EMAIL_IMAP_HOST = req.body.host;
       process.env.EMAIL_IMAP_PORT = req.body.port.toString();
 
-      res.json({ message: "Email configuration saved and tested successfully" });
+      res.json({ 
+        message: "Email configuration saved and tested successfully",
+        status: emailService.getStatus()
+      });
     } catch (error) {
       console.error("Email setup error:", error);
       res.status(500).json({ 
@@ -92,7 +102,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       await emailService.processNewEmails();
-      res.json({ message: "Email monitoring started successfully" });
+      const status = emailService.getStatus();
+      res.json({ 
+        message: "Email monitoring started successfully",
+        status: status
+      });
     } catch (error) {
       console.error("Error starting email monitoring:", error);
       res.status(500).json({ 

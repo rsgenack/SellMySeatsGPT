@@ -32,10 +32,16 @@ export class EmailService {
     port: number;
     tls: boolean;
   }): EmailService {
-    if (!EmailService.instance && credentials) {
+    // If credentials are provided, always create a new instance
+    if (credentials) {
+      if (EmailService.instance?.imap.state === 'authenticated') {
+        EmailService.instance.imap.end();
+      }
       EmailService.instance = new EmailService(credentials);
+    } else if (!EmailService.instance) {
+      throw new Error('Email service not initialized');
     }
-    return EmailService.instance!;
+    return EmailService.instance;
   }
 
   private constructor(credentials: {
@@ -45,7 +51,6 @@ export class EmailService {
     port: number;
     tls: boolean;
   }) {
-    // Gmail requires specific configuration for IMAP
     // Remove any spaces from the password as Google displays it with spaces
     const password = credentials.password.replace(/\s+/g, '');
 
@@ -94,7 +99,11 @@ export class EmailService {
         this.status.isConnected = false;
       });
 
-      this.imap.connect();
+      try {
+        this.imap.connect();
+      } catch (err) {
+        reject(err);
+      }
     });
   };
 
