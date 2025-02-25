@@ -21,7 +21,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       // Test the connection first
-      const emailService = new EmailService({
+      const emailService = EmailService.getInstance({
         user: req.body.user,
         password: req.body.password,
         host: req.body.host,
@@ -29,8 +29,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tls: true
       });
 
-      // Test connection before saving configuration
-      await emailService.testConnection();
+      const isConnected = await emailService.checkEmailConnection();
+      if (!isConnected) {
+        throw new Error("Failed to connect to email server");
+      }
 
       // Store email configuration in environment variables
       process.env.EMAIL_IMAP_USER = req.body.user;
@@ -55,7 +57,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Email configuration not found. Please configure email settings first." });
       }
 
-      const emailService = new EmailService({
+      const emailService = EmailService.getInstance({
         user: process.env.EMAIL_IMAP_USER,
         password: process.env.EMAIL_IMAP_PASSWORD,
         host: process.env.EMAIL_IMAP_HOST,
@@ -81,7 +83,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Email configuration not found. Please configure email settings first." });
       }
 
-      const emailService = new EmailService({
+      const emailService = EmailService.getInstance({
         user: process.env.EMAIL_IMAP_USER,
         password: process.env.EMAIL_IMAP_PASSWORD,
         host: process.env.EMAIL_IMAP_HOST,
@@ -105,7 +107,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
     try {
-      const emailService = new EmailService({
+      const emailService = EmailService.getInstance({
         user: process.env.EMAIL_IMAP_USER!,
         password: process.env.EMAIL_IMAP_PASSWORD!,
         host: process.env.EMAIL_IMAP_HOST!,
