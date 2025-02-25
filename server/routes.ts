@@ -85,7 +85,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Tickets
   app.get("/api/tickets", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    // Ensure we only return tickets for the authenticated user
     const tickets = await storage.getTickets(req.user.id);
+    console.log(`Fetching tickets for user ${req.user.id}, found ${tickets.length} tickets`);
     res.json(tickets);
   });
 

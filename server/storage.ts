@@ -46,7 +46,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTickets(userId: number): Promise<Ticket[]> {
-    return await db.select().from(tickets).where(eq(tickets.userId, userId));
+    // Add logging to help debug the tickets query
+    console.log(`Querying tickets for userId: ${userId}`);
+    const userTickets = await db.select().from(tickets).where(eq(tickets.userId, userId));
+    console.log(`Found ${userTickets.length} tickets for user ${userId}`);
+    return userTickets;
   }
 
   async createTicket(userId: number, ticket: InsertTicket): Promise<Ticket> {
