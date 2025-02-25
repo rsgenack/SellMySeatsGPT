@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
-import { LogOut } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 
 export function Navigation() {
   const { user, logoutMutation } = useAuth();
@@ -21,6 +21,14 @@ export function Navigation() {
               <Link href="/dashboard">
                 <Button variant="ghost">Dashboard</Button>
               </Link>
+              {user.isAdmin && (
+                <Link href="/admin/email-setup">
+                  <Button variant="ghost">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Email Setup
+                  </Button>
+                </Link>
+              )}
               <span className="text-muted-foreground">
                 Welcome, {user.username}
               </span>

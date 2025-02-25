@@ -9,7 +9,9 @@ import { User as SelectUser } from "@shared/schema";
 
 declare global {
   namespace Express {
-    interface User extends SelectUser {}
+    interface User extends SelectUser {
+      isAdmin: boolean;
+    }
   }
 }
 
@@ -95,6 +97,7 @@ export function setupAuth(app: Express) {
 
   app.get("/api/user", (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    res.json(req.user);
+    const { password, ...userWithoutPassword } = req.user;
+    res.json(userWithoutPassword);
   });
 }

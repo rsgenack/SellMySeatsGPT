@@ -8,9 +8,58 @@ import { db } from './db';
 import { users } from '@shared/schema';
 import { EmailService } from "./services/email-service";
 import { config } from 'dotenv';
+import { requireAdmin } from "./middleware/admin";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
+
+  // Admin-only email configuration endpoints
+  app.post("/api/admin/email-setup", requireAdmin, async (req, res) => {
+    if (!req.body.user || !req.body.password || !req.body.host || !req.body.port) {
+      return res.status(400).json({ error: "Missing required email configuration" });
+    }
+
+    try {
+      // Store email configuration in environment variables
+      process.env.EMAIL_IMAP_USER = req.body.user;
+      process.env.EMAIL_IMAP_PASSWORD = req.body.password;
+      process.env.EMAIL_IMAP_HOST = req.body.host;
+      process.env.EMAIL_IMAP_PORT = req.body.port.toString();
+
+      // Test the connection
+      const emailService = new EmailService({
+        user: req.body.user,
+        password: req.body.password,
+        host: req.body.host,
+        port: req.body.port,
+        tls: true
+      });
+
+      await emailService.processNewEmails();
+      res.json({ message: "Email configuration saved and tested successfully" });
+    } catch (error) {
+      console.error("Email setup error:", error);
+      res.status(500).json({ error: "Failed to configure email service" });
+    }
+  });
+
+  app.post("/api/admin/email/start-monitoring", requireAdmin, async (req, res) => {
+    try {
+      const emailService = new EmailService({
+        user: process.env.EMAIL_IMAP_USER!,
+        password: process.env.EMAIL_IMAP_PASSWORD!,
+        host: process.env.EMAIL_IMAP_HOST!,
+        port: parseInt(process.env.EMAIL_IMAP_PORT!),
+        tls: true
+      });
+
+      await emailService.processNewEmails();
+      res.json({ message: "Email monitoring started successfully" });
+    } catch (error) {
+      console.error("Error starting email monitoring:", error);
+      res.status(500).json({ error: "Failed to start email monitoring" });
+    }
+  });
 
   // Initialize email service with environment variables
   app.post("/api/email/start-monitoring", async (req, res) => {
