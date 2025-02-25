@@ -101,7 +101,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tls: true
       });
 
-      await emailService.processNewEmails();
+      await emailService.startMonitoring();
       const status = emailService.getStatus();
       res.json({ 
         message: "Email monitoring started successfully",
@@ -111,6 +111,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error starting email monitoring:", error);
       res.status(500).json({ 
         error: "Failed to start email monitoring",
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.post("/api/admin/email/stop-monitoring", requireAdmin, async (req, res) => {
+    try {
+      const emailService = EmailService.getInstance();
+      await emailService.stopMonitoring();
+      const status = emailService.getStatus();
+      res.json({ 
+        message: "Email monitoring stopped successfully",
+        status: status
+      });
+    } catch (error) {
+      console.error("Error stopping email monitoring:", error);
+      res.status(500).json({ 
+        error: "Failed to stop email monitoring",
         details: error instanceof Error ? error.message : 'Unknown error'
       });
     }

@@ -8,6 +8,7 @@ import { eq } from 'drizzle-orm';
 export interface EmailStatus {
   isConnected: boolean;
   lastChecked: Date | null;
+  isMonitoring: boolean;
   recentEmails: {
     subject: string;
     from: string;
@@ -22,8 +23,10 @@ export class EmailService {
   private status: EmailStatus = {
     isConnected: false,
     lastChecked: null,
+    isMonitoring: false,
     recentEmails: []
   };
+  private monitoringInterval: NodeJS.Timeout | null = null;
 
   static getInstance(credentials?: {
     user: string;
@@ -32,8 +35,10 @@ export class EmailService {
     port: number;
     tls: boolean;
   }): EmailService {
-    // If credentials are provided, always create a new instance
     if (credentials) {
+      if (EmailService.instance?.monitoringInterval) {
+        clearInterval(EmailService.instance.monitoringInterval);
+      }
       if (EmailService.instance?.imap.state === 'authenticated') {
         EmailService.instance.imap.end();
       }
@@ -51,7 +56,6 @@ export class EmailService {
     port: number;
     tls: boolean;
   }) {
-    // Remove any spaces from the password as Google displays it with spaces
     const password = credentials.password.replace(/\s+/g, '');
 
     this.imap = new Imap({
@@ -65,9 +69,20 @@ export class EmailService {
       keepalive: false
     });
 
+    this.setupEventHandlers();
+  }
+
+  private setupEventHandlers() {
     this.imap.on('error', (err: Error) => {
       console.error('IMAP connection error:', err);
       this.status.isConnected = false;
+      this.status.isMonitoring = false;
+    });
+
+    this.imap.on('end', () => {
+      console.log('IMAP connection ended');
+      this.status.isConnected = false;
+      this.status.isMonitoring = false;
     });
   }
 
@@ -75,7 +90,7 @@ export class EmailService {
     return this.status;
   }
 
-  private promisifyImapOpen = () => {
+  private async promisifyImapOpen(): Promise<boolean> {
     return new Promise((resolve, reject) => {
       this.imap.once('ready', () => {
         console.log('IMAP connection established');
@@ -94,58 +109,17 @@ export class EmailService {
         }
       });
 
-      this.imap.once('end', () => {
-        console.log('IMAP connection ended');
-        this.status.isConnected = false;
-      });
-
       try {
         this.imap.connect();
       } catch (err) {
         reject(err);
       }
     });
-  };
-
-  private promisifyImapSearch = (criteria: any[]): Promise<number[]> => {
-    return new Promise((resolve, reject) => {
-      this.imap.search(criteria, (err, results) => {
-        if (err) reject(err);
-        else resolve(results);
-      });
-    });
-  };
-
-  private async fetchEmail(messageId: number): Promise<ParsedMail> {
-    return new Promise((resolve, reject) => {
-      const fetch = this.imap.fetch(messageId, { bodies: '' });
-
-      fetch.on('message', (msg) => {
-        msg.on('body', async (stream) => {
-          try {
-            const parsed = await simpleParser(stream);
-            resolve(parsed);
-          } catch (err) {
-            reject(err);
-          }
-        });
-      });
-
-      fetch.once('error', reject);
-    });
   }
 
   public async checkEmailConnection(): Promise<boolean> {
     try {
-      console.log('Testing IMAP connection with settings:', {
-        user: process.env.EMAIL_IMAP_USER,
-        host: process.env.EMAIL_IMAP_HOST,
-        port: process.env.EMAIL_IMAP_PORT,
-        tls: true
-      });
-
       await this.promisifyImapOpen();
-      console.log('IMAP connection test successful');
       return true;
     } catch (error) {
       console.error('Email connection check failed:', error);
@@ -154,6 +128,36 @@ export class EmailService {
       if (this.imap.state === 'authenticated') {
         this.imap.end();
       }
+    }
+  }
+
+  public async startMonitoring(): Promise<void> {
+    try {
+      await this.processNewEmails();
+      this.status.isMonitoring = true;
+
+      // Check for new emails every 5 minutes
+      this.monitoringInterval = setInterval(async () => {
+        try {
+          await this.processNewEmails();
+        } catch (error) {
+          console.error('Error in monitoring interval:', error);
+        }
+      }, 5 * 60 * 1000);
+    } catch (error) {
+      console.error('Failed to start monitoring:', error);
+      throw error;
+    }
+  }
+
+  public async stopMonitoring(): Promise<void> {
+    if (this.monitoringInterval) {
+      clearInterval(this.monitoringInterval);
+      this.monitoringInterval = null;
+    }
+    this.status.isMonitoring = false;
+    if (this.imap.state === 'authenticated') {
+      this.imap.end();
     }
   }
 
@@ -176,12 +180,12 @@ export class EmailService {
           yesterday.setDate(yesterday.getDate() - 1);
 
           try {
+            // Search for emails from the last 24 hours, both read and unread
             const results = await this.promisifyImapSearch([
-              ['SINCE', yesterday.toISOString()],
-              'UNSEEN'
+              ['SINCE', yesterday.toISOString()]
             ]);
 
-            console.log(`Found ${results.length} new emails to process`);
+            console.log(`Found ${results.length} emails to process`);
             this.status.recentEmails = [];
 
             for (const messageId of results) {
@@ -200,16 +204,12 @@ export class EmailService {
                   to: email.to?.text
                 });
 
-                // Find user by the recipient email
                 const [user] = await db
                   .select()
                   .from(users)
                   .where(eq(users.uniqueEmail, email.to?.text || ''));
 
                 if (user) {
-                  console.log('Found matching user:', user.username);
-
-                  // Create pending ticket
                   await storage.createPendingTicket({
                     userId: user.id,
                     emailSubject: email.subject || '',
@@ -218,7 +218,7 @@ export class EmailService {
                     extractedData: {
                       eventName: email.subject?.split(' - ')[0] || '',
                       eventDate: email.date?.toISOString() || '',
-                      venue: '',
+                      venue: email.text || '',
                       section: '',
                       row: '',
                       seat: '',
@@ -226,9 +226,7 @@ export class EmailService {
                   });
 
                   emailInfo.status = 'processed';
-                  console.log('Created pending ticket successfully');
                 } else {
-                  console.log('No matching user found for email:', email.to?.text);
                   emailInfo.status = 'error';
                 }
 
@@ -254,5 +252,33 @@ export class EmailService {
         this.imap.end();
       }
     }
+  }
+
+  private promisifyImapSearch(criteria: any[]): Promise<number[]> {
+    return new Promise((resolve, reject) => {
+      this.imap.search(criteria, (err, results) => {
+        if (err) reject(err);
+        else resolve(results);
+      });
+    });
+  }
+
+  private async fetchEmail(messageId: number): Promise<ParsedMail> {
+    return new Promise((resolve, reject) => {
+      const fetch = this.imap.fetch(messageId, { bodies: '' });
+
+      fetch.on('message', (msg) => {
+        msg.on('body', async (stream) => {
+          try {
+            const parsed = await simpleParser(stream);
+            resolve(parsed);
+          } catch (err) {
+            reject(err);
+          }
+        });
+      });
+
+      fetch.once('error', reject);
+    });
   }
 }
