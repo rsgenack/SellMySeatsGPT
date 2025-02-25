@@ -14,6 +14,7 @@ export interface EmailStatus {
     from: string;
     date: Date;
     status: 'processed' | 'pending' | 'error';
+    recipientEmail?: string;
   }[];
 }
 
@@ -157,14 +158,14 @@ export class EmailService {
       await this.processNewEmails();
       this.status.isMonitoring = true;
 
-      // Check for new emails every 5 minutes
+      // Check for new emails every minute
       this.monitoringInterval = setInterval(async () => {
         try {
           await this.processNewEmails();
         } catch (error) {
           console.error('Error in monitoring interval:', error);
         }
-      }, 5 * 60 * 1000);
+      }, 60 * 1000); // Changed to check every minute instead of 5 minutes
     } catch (error) {
       console.error('Failed to start monitoring:', error);
       throw error;
@@ -230,7 +231,8 @@ export class EmailService {
                     subject: email.subject || '',
                     from: email.from?.text || '',
                     date: email.date || new Date(),
-                    status: 'pending' as const
+                    status: 'pending' as const,
+                    recipientEmail: email.to?.text || ''
                   };
 
                   const [user] = await db
