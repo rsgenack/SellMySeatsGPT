@@ -21,12 +21,10 @@ function Router() {
       <ProtectedRoute 
         path="/admin/email-setup" 
         component={AdminEmailSetupPage} 
-        requireAdmin={true}
       />
       <ProtectedRoute 
         path="/admin/email-monitor" 
         component={AdminEmailMonitorPage} 
-        requireAdmin={true}
       />
       <Route component={NotFound} />
     </Switch>
