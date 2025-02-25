@@ -176,14 +176,13 @@ export class EmailService {
           }
 
           console.log('Opened inbox, searching for new emails...');
-          const yesterday = new Date();
-          yesterday.setDate(yesterday.getDate() - 1);
+          // Look back 7 days for emails
+          const sevenDaysAgo = new Date();
+          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
           try {
-            // Search for emails from the last 24 hours, both read and unread
-            const results = await this.promisifyImapSearch([
-              ['SINCE', yesterday.toISOString()]
-            ]);
+            // Search for all emails in the last 7 days
+            const results = await this.promisifyImapSearch(['ALL', ['SINCE', sevenDaysAgo.toISOString()]]);
 
             console.log(`Found ${results.length} emails to process`);
             this.status.recentEmails = [];
