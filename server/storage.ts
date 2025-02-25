@@ -91,8 +91,15 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Pending ticket not found");
     }
 
-    // Extract ticket information from the pending ticket's extracted data
-    const ticketData = pendingTicket.extractedData;
+    // Type assertion for extractedData
+    const ticketData = pendingTicket.extractedData as {
+      eventName: string;
+      eventDate: string;
+      venue: string;
+      section: string;
+      row: string;
+      seat: string;
+    };
 
     // Create a new confirmed ticket
     const [confirmedTicket] = await db
