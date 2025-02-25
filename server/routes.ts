@@ -14,24 +14,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
 
   // Admin-only email configuration endpoints
-  app.get("/api/admin/email/config", requireAdmin, async (req, res) => {
-    try {
-      const config = {
-        isConfigured: !!(process.env.EMAIL_IMAP_USER && 
-                        process.env.EMAIL_IMAP_PASSWORD && 
-                        process.env.EMAIL_IMAP_HOST && 
-                        process.env.EMAIL_IMAP_PORT),
-        user: process.env.EMAIL_IMAP_USER || '',
-        host: process.env.EMAIL_IMAP_HOST || '',
-        port: process.env.EMAIL_IMAP_PORT || ''
-      };
-      res.json(config);
-    } catch (error) {
-      console.error("Error getting email config:", error);
-      res.status(500).json({ error: "Failed to get email configuration" });
-    }
-  });
-
   app.post("/api/admin/email-setup", requireAdmin, async (req, res) => {
     if (!req.body.user || !req.body.password || !req.body.host || !req.body.port) {
       return res.status(400).json({ error: "Missing required email configuration" });

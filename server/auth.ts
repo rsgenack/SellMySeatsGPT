@@ -9,7 +9,9 @@ import { User as SelectUser } from "@shared/schema";
 
 declare global {
   namespace Express {
-    interface User extends SelectUser {}
+    interface User extends SelectUser {
+      isAdmin: boolean;
+    }
   }
 }
 
@@ -35,15 +37,10 @@ function generateUniqueEmail(username: string): string {
 
 export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET || 'your-secret-key',
+    secret: process.env.SESSION_SECRET!,
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
-    cookie: {
-      secure: false, // Set to false to work without HTTPS in development
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      sameSite: 'lax'
-    }
   };
 
   app.set("trust proxy", 1);
@@ -53,14 +50,16 @@ export function setupAuth(app: Express) {
 
   passport.use(
     new LocalStrategy(async (username, password, done) => {
-      try {
-        const user = await storage.getUserByUsername(username);
-        if (!user || !(await comparePasswords(password, user.password))) {
-          return done(null, false);
-        }
-        return done(null, user);
-      } catch (error) {
-        return done(error);
+      const user = await storage.getUserByUsername(username);
+      if (!user || !(await comparePasswords(password, user.password))) {
+        return done(null, false);
+      } else {
+        // Add isAdmin flag based on username (for testing)
+        const userWithAdmin = {
+          ...user,
+          isAdmin: username === 'admin' // Only 'admin' user has admin privileges
+        };
+        return done(null, userWithAdmin);
       }
     }),
   );
@@ -72,48 +71,44 @@ export function setupAuth(app: Express) {
       if (!user) {
         return done(null, false);
       }
-      done(null, user);
+      // Add isAdmin flag during deserialization
+      const userWithAdmin = {
+        ...user,
+        isAdmin: user.username === 'admin'
+      };
+      done(null, userWithAdmin);
     } catch (err) {
       done(err);
     }
   });
 
   app.post("/api/register", async (req, res, next) => {
-    try {
-      const existingUser = await storage.getUserByUsername(req.body.username);
-      if (existingUser) {
-        return res.status(400).json({ error: "Username already exists" });
-      }
-
-      const uniqueEmail = generateUniqueEmail(req.body.username);
-      const user = await storage.createUser({
-        ...req.body,
-        password: await hashPassword(req.body.password),
-        uniqueEmail,
-      });
-
-      req.login(user, (err) => {
-        if (err) return next(err);
-        const { password, ...userWithoutPassword } = user;
-        res.status(201).json(userWithoutPassword);
-      });
-    } catch (error) {
-      next(error);
+    const existingUser = await storage.getUserByUsername(req.body.username);
+    if (existingUser) {
+      return res.status(400).send("Username already exists");
     }
+
+    const uniqueEmail = generateUniqueEmail(req.body.username);
+    const user = await storage.createUser({
+      ...req.body,
+      password: await hashPassword(req.body.password),
+      uniqueEmail,
+    });
+
+    // Add isAdmin flag for the newly registered user
+    const userWithAdmin = {
+      ...user,
+      isAdmin: user.username === 'admin'
+    };
+
+    req.login(userWithAdmin, (err) => {
+      if (err) return next(err);
+      res.status(201).json(userWithAdmin);
+    });
   });
 
-  app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err, user) => {
-      if (err) return next(err);
-      if (!user) {
-        return res.status(401).json({ error: "Invalid username or password" });
-      }
-      req.login(user, (err) => {
-        if (err) return next(err);
-        const { password, ...userWithoutPassword } = user;
-        res.json(userWithoutPassword);
-      });
-    })(req, res, next);
+  app.post("/api/login", passport.authenticate("local"), (req, res) => {
+    res.status(200).json(req.user);
   });
 
   app.post("/api/logout", (req, res, next) => {
