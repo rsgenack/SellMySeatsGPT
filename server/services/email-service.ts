@@ -31,11 +31,19 @@ export class EmailService {
     port: number;
     tls: boolean;
   }) {
+    // Gmail requires specific configuration for IMAP
+    // Remove any spaces from the password as Google displays it with spaces
+    const password = credentials.password.replace(/\s+/g, '');
+
     this.imap = new Imap({
       ...credentials,
+      password,
       tlsOptions: {
-        rejectUnauthorized: false // Allow self-signed certificates
-      }
+        rejectUnauthorized: false,
+        servername: credentials.host // Required for Gmail's SSL certificate validation
+      },
+      authTimeout: 10000, // Increase auth timeout to handle Gmail's 2FA process
+      keepalive: false // Prevent keepalive issues with Gmail
     });
 
     // Add error handling for IMAP connection
@@ -58,7 +66,14 @@ export class EmailService {
       });
       this.imap.once('error', (err) => {
         this.status.isConnected = false;
-        reject(err);
+        // Handle common Gmail authentication errors
+        if (err.message.includes('Application-specific password required')) {
+          reject(new Error('Gmail requires an App Password for IMAP access. Please generate one from your Google Account settings.'));
+        } else if (err.source === 'authentication') {
+          reject(new Error('Gmail authentication failed. Please make sure you are using an App Password, not your regular Gmail password.'));
+        } else {
+          reject(err);
+        }
       });
       this.imap.connect();
     });
@@ -106,10 +121,13 @@ export class EmailService {
       this.imap.end();
     } catch (error: any) {
       console.error('IMAP connection test failed:', error);
-      // Enhance error message based on common IMAP issues
       let errorMessage = 'Failed to connect to IMAP server: ';
-      if (error.source === 'authentication') {
-        errorMessage += 'Invalid username or password';
+
+      // Enhanced error messaging for Gmail-specific issues
+      if (error.message.includes('Application-specific password required')) {
+        errorMessage = 'Gmail requires an App Password for IMAP access. Please generate one from your Google Account settings: https://support.google.com/accounts/answer/185833';
+      } else if (error.source === 'authentication') {
+        errorMessage = 'Invalid username or password. For Gmail accounts, make sure you are using an App Password, not your regular Gmail password.';
       } else if (error.code === 'ECONNREFUSED') {
         errorMessage += 'Could not connect to server (connection refused)';
       } else if (error.code === 'ENOTFOUND') {
