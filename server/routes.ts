@@ -6,6 +6,7 @@ import { insertTicketSchema, insertPaymentSchema } from "@shared/schema";
 import { eq } from 'drizzle-orm';
 import { db } from './db';
 import { users } from '@shared/schema';
+import { EmailService } from "./services/email-service"; // Fixed import path
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
