@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TicketForm from "@/components/tickets/ticket-form";
 import TicketList from "@/components/tickets/ticket-list";
+import PendingTicketList from "@/components/tickets/pending-ticket-list";
 import StatsCards from "@/components/dashboard/stats-cards";
 import { Link } from "wouter";
 import { LogOut, Mail, Copy } from "lucide-react";
@@ -85,6 +86,7 @@ export default function DashboardPage() {
         <Tabs defaultValue="listings" className="mt-8">
           <TabsList>
             <TabsTrigger value="listings">My Listings</TabsTrigger>
+            <TabsTrigger value="pending">Pending Tickets</TabsTrigger>
             <TabsTrigger value="new">New Listing</TabsTrigger>
           </TabsList>
 
@@ -95,6 +97,17 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <TicketList tickets={tickets} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="pending">
+            <Card>
+              <CardHeader>
+                <CardTitle>Pending Tickets</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <PendingTicketList />
               </CardContent>
             </Card>
           </TabsContent>
