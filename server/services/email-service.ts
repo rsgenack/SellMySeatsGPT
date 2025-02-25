@@ -35,6 +35,23 @@ export class EmailService {
     port: number;
     tls: boolean;
   }): EmailService {
+    // If there's no instance yet, try to create one from environment variables
+    if (!EmailService.instance) {
+      if (process.env.EMAIL_IMAP_USER && 
+          process.env.EMAIL_IMAP_PASSWORD && 
+          process.env.EMAIL_IMAP_HOST && 
+          process.env.EMAIL_IMAP_PORT) {
+        EmailService.instance = new EmailService({
+          user: process.env.EMAIL_IMAP_USER,
+          password: process.env.EMAIL_IMAP_PASSWORD,
+          host: process.env.EMAIL_IMAP_HOST,
+          port: parseInt(process.env.EMAIL_IMAP_PORT),
+          tls: true
+        });
+      }
+    }
+
+    // If credentials are provided, update the instance
     if (credentials) {
       if (EmailService.instance?.monitoringInterval) {
         clearInterval(EmailService.instance.monitoringInterval);
@@ -43,9 +60,12 @@ export class EmailService {
         EmailService.instance.imap.end();
       }
       EmailService.instance = new EmailService(credentials);
-    } else if (!EmailService.instance) {
-      throw new Error('Email service not initialized');
     }
+
+    if (!EmailService.instance) {
+      throw new Error('Email service not initialized and no credentials provided');
+    }
+
     return EmailService.instance;
   }
 
@@ -56,6 +76,7 @@ export class EmailService {
     port: number;
     tls: boolean;
   }) {
+    // Remove any spaces from the password as Google displays it with spaces
     const password = credentials.password.replace(/\s+/g, '');
 
     this.imap = new Imap({
@@ -178,74 +199,80 @@ export class EmailService {
           console.log('Opened inbox, searching for emails...');
 
           try {
-            // First try to get all emails in the inbox
+            // Search for all emails
             console.log('Searching for all emails in inbox...');
             const results = await this.promisifyImapSearch(['ALL']);
 
             console.log(`Found ${results.length} total emails in inbox`);
             this.status.recentEmails = [];
 
-            // Process the most recent 10 emails first
-            const recentEmails = results.slice(-10);
-            console.log(`Processing ${recentEmails.length} most recent emails`);
+            // Process all emails in batches of 10
+            const emailBatches = [];
+            for (let i = 0; i < results.length; i += 10) {
+              emailBatches.push(results.slice(i, i + 10));
+            }
 
-            for (const messageId of recentEmails) {
-              try {
-                const email = await this.fetchEmail(messageId);
-                console.log('Processing email:', {
-                  messageId,
-                  subject: email.subject,
-                  from: email.from?.text,
-                  to: email.to?.text,
-                  date: email.date
-                });
+            console.log(`Processing ${emailBatches.length} batches of emails`);
 
-                const emailInfo = {
-                  subject: email.subject || '',
-                  from: email.from?.text || '',
-                  date: email.date || new Date(),
-                  status: 'pending' as const
-                };
-
-                const [user] = await db
-                  .select()
-                  .from(users)
-                  .where(eq(users.uniqueEmail, email.to?.text || ''));
-
-                if (user) {
-                  console.log('Found matching user:', user.username);
-
-                  await storage.createPendingTicket({
-                    userId: user.id,
-                    emailSubject: email.subject || '',
-                    emailFrom: email.from?.text || '',
-                    rawEmailData: email,
-                    extractedData: {
-                      eventName: email.subject?.split(' - ')[0] || '',
-                      eventDate: email.date?.toISOString() || '',
-                      venue: email.text || '',
-                      section: '',
-                      row: '',
-                      seat: '',
-                    },
+            for (const batch of emailBatches) {
+              for (const messageId of batch) {
+                try {
+                  const email = await this.fetchEmail(messageId);
+                  console.log('Processing email:', {
+                    messageId,
+                    subject: email.subject,
+                    from: email.from?.text,
+                    to: email.to?.text,
+                    date: email.date
                   });
 
-                  emailInfo.status = 'processed';
-                  console.log('Successfully processed email:', email.subject);
-                } else {
-                  console.log('No matching user found for email address:', email.to?.text);
-                  emailInfo.status = 'error';
-                }
+                  const emailInfo = {
+                    subject: email.subject || '',
+                    from: email.from?.text || '',
+                    date: email.date || new Date(),
+                    status: 'pending' as const
+                  };
 
-                this.status.recentEmails.push(emailInfo);
-              } catch (error) {
-                console.error('Error processing individual email:', error);
-                this.status.recentEmails.push({
-                  subject: 'Error processing email',
-                  from: 'unknown',
-                  date: new Date(),
-                  status: 'error'
-                });
+                  const [user] = await db
+                    .select()
+                    .from(users)
+                    .where(eq(users.uniqueEmail, email.to?.text || ''));
+
+                  if (user) {
+                    console.log('Found matching user:', user.username);
+
+                    await storage.createPendingTicket({
+                      userId: user.id,
+                      emailSubject: email.subject || '',
+                      emailFrom: email.from?.text || '',
+                      rawEmailData: email,
+                      extractedData: {
+                        eventName: email.subject?.split(' - ')[0] || '',
+                        eventDate: email.date?.toISOString() || '',
+                        venue: email.text || '',
+                        section: '',
+                        row: '',
+                        seat: '',
+                      },
+                    });
+
+                    emailInfo.status = 'processed';
+                    console.log('Successfully processed email:', email.subject);
+                  } else {
+                    console.log('No matching user found for email address:', email.to?.text);
+                    emailInfo.status = 'error';
+                  }
+
+                  this.status.recentEmails.push(emailInfo);
+                } catch (error) {
+                  console.error('Error processing individual email:', error);
+                  this.status.recentEmails.push({
+                    subject: 'Error processing email',
+                    from: 'unknown',
+                    date: new Date(),
+                    status: 'error'
+                  });
+                }
               }
             }
             resolve(true);
