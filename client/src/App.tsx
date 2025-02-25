@@ -9,6 +9,7 @@ import HomePage from "@/pages/home-page";
 import AuthPage from "@/pages/auth-page";
 import DashboardPage from "@/pages/dashboard-page";
 import AdminEmailSetupPage from "@/pages/admin/email-setup-page";
+import AdminEmailMonitorPage from "@/pages/admin/email-monitor-page";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -20,6 +21,11 @@ function Router() {
       <ProtectedRoute 
         path="/admin/email-setup" 
         component={AdminEmailSetupPage} 
+        requireAdmin={true}
+      />
+      <ProtectedRoute 
+        path="/admin/email-monitor" 
+        component={AdminEmailMonitorPage} 
         requireAdmin={true}
       />
       <Route component={NotFound} />
