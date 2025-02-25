@@ -49,7 +49,7 @@ export const insertTicketSchema = createInsertSchema(tickets).omit({ id: true, u
 export const insertPaymentSchema = createInsertSchema(payments).omit({ id: true, createdAt: true });
 export const insertPendingTicketSchema = createInsertSchema(pendingTickets).omit({ id: true, status: true, createdAt: true });
 
-export type User = typeof users.$inferSelect;
+export type User = typeof users.$inferSelect & { isAdmin: boolean };
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type Ticket = typeof tickets.$inferSelect;
 export type InsertTicket = z.infer<typeof insertTicketSchema>;

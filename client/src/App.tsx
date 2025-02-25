@@ -17,7 +17,11 @@ function Router() {
       <Route path="/" component={HomePage} />
       <Route path="/auth" component={AuthPage} />
       <ProtectedRoute path="/dashboard" component={DashboardPage} />
-      <ProtectedRoute path="/admin/email-setup" component={AdminEmailSetupPage} />
+      <ProtectedRoute 
+        path="/admin/email-setup" 
+        component={AdminEmailSetupPage} 
+        requireAdmin={true}
+      />
       <Route component={NotFound} />
     </Switch>
   );

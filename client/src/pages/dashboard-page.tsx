@@ -8,6 +8,7 @@ import TicketForm from "@/components/tickets/ticket-form";
 import TicketList from "@/components/tickets/ticket-list";
 import PendingTicketList from "@/components/tickets/pending-ticket-list";
 import StatsCards from "@/components/dashboard/stats-cards";
+import AdminNav from "@/components/layout/admin-nav";
 import { Link } from "wouter";
 import { LogOut, Mail, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -59,6 +60,8 @@ export default function DashboardPage() {
           </div>
         </div>
       </nav>
+
+      {user?.isAdmin && <AdminNav />}
 
       <main className="container mx-auto py-8 px-4">
         <Card className="mb-8">
