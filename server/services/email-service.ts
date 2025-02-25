@@ -161,7 +161,7 @@ export class EmailService {
     }
   }
 
-  async processNewEmails() {
+  private async processNewEmails() {
     try {
       console.log('Starting email processing...');
       await this.promisifyImapOpen();
@@ -175,21 +175,31 @@ export class EmailService {
             return;
           }
 
-          console.log('Opened inbox, searching for new emails...');
-          // Look back 7 days for emails
-          const sevenDaysAgo = new Date();
-          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+          console.log('Opened inbox, searching for emails...');
 
           try {
-            // Search for all emails in the last 7 days
-            const results = await this.promisifyImapSearch(['ALL', ['SINCE', sevenDaysAgo.toISOString()]]);
+            // First try to get all emails in the inbox
+            console.log('Searching for all emails in inbox...');
+            const results = await this.promisifyImapSearch(['ALL']);
 
-            console.log(`Found ${results.length} emails to process`);
+            console.log(`Found ${results.length} total emails in inbox`);
             this.status.recentEmails = [];
 
-            for (const messageId of results) {
+            // Process the most recent 10 emails first
+            const recentEmails = results.slice(-10);
+            console.log(`Processing ${recentEmails.length} most recent emails`);
+
+            for (const messageId of recentEmails) {
               try {
                 const email = await this.fetchEmail(messageId);
+                console.log('Processing email:', {
+                  messageId,
+                  subject: email.subject,
+                  from: email.from?.text,
+                  to: email.to?.text,
+                  date: email.date
+                });
+
                 const emailInfo = {
                   subject: email.subject || '',
                   from: email.from?.text || '',
@@ -197,18 +207,14 @@ export class EmailService {
                   status: 'pending' as const
                 };
 
-                console.log('Processing email:', {
-                  subject: email.subject,
-                  from: email.from?.text,
-                  to: email.to?.text
-                });
-
                 const [user] = await db
                   .select()
                   .from(users)
                   .where(eq(users.uniqueEmail, email.to?.text || ''));
 
                 if (user) {
+                  console.log('Found matching user:', user.username);
+
                   await storage.createPendingTicket({
                     userId: user.id,
                     emailSubject: email.subject || '',
@@ -225,13 +231,15 @@ export class EmailService {
                   });
 
                   emailInfo.status = 'processed';
+                  console.log('Successfully processed email:', email.subject);
                 } else {
+                  console.log('No matching user found for email address:', email.to?.text);
                   emailInfo.status = 'error';
                 }
 
                 this.status.recentEmails.push(emailInfo);
               } catch (error) {
-                console.error('Error processing email:', error);
+                console.error('Error processing individual email:', error);
                 this.status.recentEmails.push({
                   subject: 'Error processing email',
                   from: 'unknown',
@@ -242,10 +250,14 @@ export class EmailService {
             }
             resolve(true);
           } catch (error) {
+            console.error('Error during email search:', error);
             reject(error);
           }
         });
       });
+    } catch (error) {
+      console.error('Error in processNewEmails:', error);
+      throw error;
     } finally {
       if (this.imap.state === 'authenticated') {
         this.imap.end();
