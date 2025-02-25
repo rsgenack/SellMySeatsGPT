@@ -5,8 +5,24 @@ import { db } from '../db';
 import { users } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 
+export interface EmailStatus {
+  isConnected: boolean;
+  lastChecked: Date | null;
+  recentEmails: {
+    subject: string;
+    from: string;
+    date: Date;
+    status: 'processed' | 'pending' | 'error';
+  }[];
+}
+
 export class EmailService {
   private imap: Imap;
+  private status: EmailStatus = {
+    isConnected: false,
+    lastChecked: null,
+    recentEmails: []
+  };
 
   constructor(credentials: {
     user: string;
@@ -25,16 +41,25 @@ export class EmailService {
     // Add error handling for IMAP connection
     this.imap.on('error', (err: Error) => {
       console.error('IMAP connection error:', err);
+      this.status.isConnected = false;
     });
+  }
+
+  getStatus(): EmailStatus {
+    return this.status;
   }
 
   private promisifyImapOpen = () => {
     return new Promise((resolve, reject) => {
       this.imap.once('ready', () => {
         console.log('IMAP connection established');
+        this.status.isConnected = true;
         resolve(true);
       });
-      this.imap.once('error', reject);
+      this.imap.once('error', (err) => {
+        this.status.isConnected = false;
+        reject(err);
+      });
       this.imap.connect();
     });
   };
@@ -100,6 +125,7 @@ export class EmailService {
     try {
       console.log('Starting email processing...');
       await this.promisifyImapOpen();
+      this.status.lastChecked = new Date();
 
       this.imap.openBox('INBOX', false, async (err, box) => {
         if (err) {
@@ -117,10 +143,18 @@ export class EmailService {
         ]);
 
         console.log(`Found ${results.length} new emails to process`);
+        this.status.recentEmails = [];
 
         for (const messageId of results) {
           try {
             const email = await this.fetchEmail(messageId);
+            const emailInfo = {
+              subject: email.subject || '',
+              from: email.from?.value?.[0]?.address || '',
+              date: email.date || new Date(),
+              status: 'pending' as const
+            };
+
             console.log('Processing email:', {
               subject: email.subject,
               from: email.from?.value?.[0]?.address,
@@ -157,12 +191,22 @@ export class EmailService {
                 extractedData: ticketInfo,
               });
 
+              emailInfo.status = 'processed';
               console.log('Created pending ticket successfully');
             } else {
               console.log('No matching user found for email:', email.to?.value?.[0]?.address);
+              emailInfo.status = 'error';
             }
+
+            this.status.recentEmails.push(emailInfo);
           } catch (error) {
             console.error('Error processing email:', error);
+            this.status.recentEmails.push({
+              subject: 'Error processing email',
+              from: 'unknown',
+              date: new Date(),
+              status: 'error'
+            });
           }
         }
       });

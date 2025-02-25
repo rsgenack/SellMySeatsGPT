@@ -48,6 +48,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/admin/email/status", requireAdmin, async (req, res) => {
+    try {
+      if (!process.env.EMAIL_IMAP_USER || !process.env.EMAIL_IMAP_PASSWORD || 
+          !process.env.EMAIL_IMAP_HOST || !process.env.EMAIL_IMAP_PORT) {
+        return res.status(400).json({ error: "Email configuration not found. Please configure email settings first." });
+      }
+
+      const emailService = new EmailService({
+        user: process.env.EMAIL_IMAP_USER,
+        password: process.env.EMAIL_IMAP_PASSWORD,
+        host: process.env.EMAIL_IMAP_HOST,
+        port: parseInt(process.env.EMAIL_IMAP_PORT),
+        tls: true
+      });
+
+      const status = emailService.getStatus();
+      res.json(status);
+    } catch (error) {
+      console.error("Error getting email status:", error);
+      res.status(500).json({ 
+        error: "Failed to get email status",
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   app.post("/api/admin/email/start-monitoring", requireAdmin, async (req, res) => {
     try {
       if (!process.env.EMAIL_IMAP_USER || !process.env.EMAIL_IMAP_PASSWORD || 

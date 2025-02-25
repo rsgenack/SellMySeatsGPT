@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Mail, Settings } from "lucide-react";
+import { Mail, LineChart } from "lucide-react";
 
 export default function AdminNav() {
   const [location] = useLocation();
@@ -18,6 +18,16 @@ export default function AdminNav() {
             >
               <Mail className="h-4 w-4" />
               Email Setup
+            </Button>
+          </Link>
+          <Link href="/admin/email-monitor">
+            <Button 
+              variant={location === "/admin/email-monitor" ? "secondary" : "ghost"} 
+              size="sm" 
+              className="gap-2"
+            >
+              <LineChart className="h-4 w-4" />
+              Email Monitor
             </Button>
           </Link>
         </div>
