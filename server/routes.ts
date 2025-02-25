@@ -45,15 +45,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Email Webhook Endpoint
   app.post("/api/email-webhook", async (req, res) => {
     try {
+      console.log("Received email webhook:", {
+        to: req.body.to,
+        from: req.body.from,
+        subject: req.body.subject
+      });
+
       const emailData = req.body;
 
       // Extract the recipient email to find the corresponding user
       const toEmail = emailData.to;
+      console.log("Looking for user with unique email:", toEmail);
+
       const [user] = await db.select().from(users).where(eq(users.uniqueEmail, toEmail));
 
       if (!user) {
+        console.log("No user found for email:", toEmail);
         return res.status(404).json({ error: "User not found for this email address" });
       }
+
+      console.log("Found user:", user.username);
 
       // Create a pending ticket from the email
       const pendingTicket = await storage.createPendingTicket({
@@ -72,6 +83,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
       });
 
+      console.log("Created pending ticket:", pendingTicket);
       res.status(201).json(pendingTicket);
     } catch (error) {
       console.error("Error processing email:", error);
