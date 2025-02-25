@@ -20,13 +20,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      // Store email configuration in environment variables
-      process.env.EMAIL_IMAP_USER = req.body.user;
-      process.env.EMAIL_IMAP_PASSWORD = req.body.password;
-      process.env.EMAIL_IMAP_HOST = req.body.host;
-      process.env.EMAIL_IMAP_PORT = req.body.port.toString();
-
-      // Test the connection
+      // Test the connection first
       const emailService = new EmailService({
         user: req.body.user,
         password: req.body.password,
@@ -35,21 +29,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tls: true
       });
 
-      await emailService.processNewEmails();
+      // Test connection before saving configuration
+      await emailService.testConnection();
+
+      // Store email configuration in environment variables
+      process.env.EMAIL_IMAP_USER = req.body.user;
+      process.env.EMAIL_IMAP_PASSWORD = req.body.password;
+      process.env.EMAIL_IMAP_HOST = req.body.host;
+      process.env.EMAIL_IMAP_PORT = req.body.port.toString();
+
       res.json({ message: "Email configuration saved and tested successfully" });
     } catch (error) {
       console.error("Email setup error:", error);
-      res.status(500).json({ error: "Failed to configure email service" });
+      res.status(500).json({ 
+        error: "Failed to configure email service",
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 
   app.post("/api/admin/email/start-monitoring", requireAdmin, async (req, res) => {
     try {
+      if (!process.env.EMAIL_IMAP_USER || !process.env.EMAIL_IMAP_PASSWORD || 
+          !process.env.EMAIL_IMAP_HOST || !process.env.EMAIL_IMAP_PORT) {
+        return res.status(400).json({ error: "Email configuration not found. Please configure email settings first." });
+      }
+
       const emailService = new EmailService({
-        user: process.env.EMAIL_IMAP_USER!,
-        password: process.env.EMAIL_IMAP_PASSWORD!,
-        host: process.env.EMAIL_IMAP_HOST!,
-        port: parseInt(process.env.EMAIL_IMAP_PORT!),
+        user: process.env.EMAIL_IMAP_USER,
+        password: process.env.EMAIL_IMAP_PASSWORD,
+        host: process.env.EMAIL_IMAP_HOST,
+        port: parseInt(process.env.EMAIL_IMAP_PORT),
         tls: true
       });
 
@@ -57,7 +67,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Email monitoring started successfully" });
     } catch (error) {
       console.error("Error starting email monitoring:", error);
-      res.status(500).json({ error: "Failed to start email monitoring" });
+      res.status(500).json({ 
+        error: "Failed to start email monitoring",
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 

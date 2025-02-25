@@ -15,7 +15,12 @@ export class EmailService {
     port: number;
     tls: boolean;
   }) {
-    this.imap = new Imap(credentials);
+    this.imap = new Imap({
+      ...credentials,
+      tlsOptions: {
+        rejectUnauthorized: false // Allow self-signed certificates
+      }
+    });
 
     // Add error handling for IMAP connection
     this.imap.on('error', (err: Error) => {
@@ -62,6 +67,18 @@ export class EmailService {
     });
   }
 
+  async testConnection(): Promise<void> {
+    try {
+      console.log('Testing IMAP connection...');
+      await this.promisifyImapOpen();
+      console.log('IMAP connection test successful');
+      this.imap.end();
+    } catch (error) {
+      console.error('IMAP connection test failed:', error);
+      throw new Error(`Failed to connect to IMAP server: ${error.message}`);
+    }
+  }
+
   async processNewEmails() {
     try {
       console.log('Starting email processing...');
@@ -89,15 +106,15 @@ export class EmailService {
             const email = await this.fetchEmail(messageId);
             console.log('Processing email:', {
               subject: email.subject,
-              from: email.from?.value[0]?.address,
-              to: email.to?.value[0]?.address
+              from: email.from?.value?.[0]?.address,
+              to: email.to?.value?.[0]?.address
             });
 
             // Find user by the recipient email
             const [user] = await db
               .select()
               .from(users)
-              .where(eq(users.uniqueEmail, email.to?.value[0]?.address || ''));
+              .where(eq(users.uniqueEmail, email.to?.value?.[0]?.address || ''));
 
             if (user) {
               console.log('Found matching user:', user.username);
@@ -118,14 +135,14 @@ export class EmailService {
               await storage.createPendingTicket({
                 userId: user.id,
                 emailSubject: email.subject || '',
-                emailFrom: email.from?.value[0]?.address || '',
+                emailFrom: email.from?.value?.[0]?.address || '',
                 rawEmailData: email,
                 extractedData: ticketInfo,
               });
 
               console.log('Created pending ticket successfully');
             } else {
-              console.log('No matching user found for email:', email.to?.value[0]?.address);
+              console.log('No matching user found for email:', email.to?.value?.[0]?.address);
             }
           } catch (error) {
             console.error('Error processing email:', error);
