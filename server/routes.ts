@@ -187,9 +187,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Payments
   app.get("/api/payments", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    const payments = await storage.getPayments(req.user.id);
-    res.json(payments);
+    if (!req.isAuthenticated()) {
+      console.log('[Routes] Unauthenticated request to /api/payments');
+      return res.sendStatus(401);
+    }
+
+    try {
+      console.log(`[Routes] Getting payments for authenticated user: ${req.user.id}`);
+      const payments = await storage.getPayments(req.user.id);
+      console.log(`[Routes] Successfully retrieved ${payments.length} payments for user ${req.user.id}`);
+      res.json(payments);
+    } catch (error) {
+      console.error('[Routes] Error getting payments:', error);
+      res.status(500).json({ error: 'Failed to retrieve payments' });
+    }
   });
 
   const httpServer = createServer(app);

@@ -14,8 +14,14 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function DashboardPage() {
   const { user, logoutMutation } = useAuth();
-  const { data: tickets = [] } = useQuery<Ticket[]>({ queryKey: ["/api/tickets"] });
-  const { data: payments = [] } = useQuery<Payment[]>({ queryKey: ["/api/payments"] });
+  const { data: tickets = [] } = useQuery<Ticket[]>({ 
+    queryKey: ["/api/tickets", user?.id],
+    enabled: !!user // Only fetch when user is logged in
+  });
+  const { data: payments = [] } = useQuery<Payment[]>({ 
+    queryKey: ["/api/payments", user?.id],
+    enabled: !!user
+  });
   const { toast } = useToast();
 
   const handleCopyEmail = () => {
