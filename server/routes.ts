@@ -6,10 +6,32 @@ import { insertTicketSchema, insertPaymentSchema } from "@shared/schema";
 import { eq } from 'drizzle-orm';
 import { db } from './db';
 import { users } from '@shared/schema';
-import { EmailService } from "./services/email-service"; // Fixed import path
+import { EmailService } from "./services/email-service";
+import { config } from 'dotenv';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
+
+  // Initialize email service with environment variables
+  app.post("/api/email/start-monitoring", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    try {
+      const emailService = new EmailService({
+        user: process.env.EMAIL_IMAP_USER!,
+        password: process.env.EMAIL_IMAP_PASSWORD!,
+        host: process.env.EMAIL_IMAP_HOST!,
+        port: parseInt(process.env.EMAIL_IMAP_PORT!),
+        tls: true
+      });
+
+      await emailService.processNewEmails();
+      res.json({ message: "Email monitoring started successfully" });
+    } catch (error) {
+      console.error("Error starting email monitoring:", error);
+      res.status(500).json({ error: "Failed to start email monitoring" });
+    }
+  });
 
   // Tickets
   app.get("/api/tickets", async (req, res) => {
