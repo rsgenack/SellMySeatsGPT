@@ -107,13 +107,13 @@ export class EmailService {
     });
   }
 
-  async testConnection(): Promise<void> {
+  private async testConnection(): Promise<void> {
     try {
       console.log('Testing IMAP connection with settings:', {
-        user: this.imap.user,
-        host: this.imap.host,
-        port: this.imap.port,
-        tls: this.imap.options.tls
+        user: process.env.EMAIL_IMAP_USER,
+        host: process.env.EMAIL_IMAP_HOST,
+        port: process.env.EMAIL_IMAP_PORT,
+        tls: true
       });
 
       await this.promisifyImapOpen();
@@ -136,6 +136,16 @@ export class EmailService {
         errorMessage += error.message;
       }
       throw new Error(errorMessage);
+    }
+  }
+
+  public async checkEmailConnection(): Promise<boolean> {
+    try {
+      await this.testConnection();
+      return true;
+    } catch (error) {
+      console.error('Email connection check failed:', error);
+      return false;
     }
   }
 
