@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 
 const emailSetupSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
+  user: z.string().email("Please enter a valid email address"),
   password: z.string().min(1, "Password is required"),
   host: z.string().min(1, "IMAP host is required"),
   port: z.coerce.number().min(1, "Port is required"),
@@ -37,7 +37,7 @@ export default function EmailSetupForm() {
 
   const setupMutation = useMutation({
     mutationFn: async (data: EmailSetupForm) => {
-      await apiRequest("POST", "/api/email-setup", data);
+      await apiRequest("POST", "/api/admin/email-setup", data);
     },
     onSuccess: () => {
       toast({
@@ -54,6 +54,25 @@ export default function EmailSetupForm() {
     },
   });
 
+  const startMonitoringMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("POST", "/api/admin/email/start-monitoring");
+    },
+    onSuccess: () => {
+      toast({
+        title: "Email Monitoring Started",
+        description: "The system is now checking for new ticket emails.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Monitoring Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: EmailSetupForm) => {
     setupMutation.mutate(data);
   };
@@ -63,7 +82,7 @@ export default function EmailSetupForm() {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           control={form.control}
-          name="email"
+          name="user"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Email Address</FormLabel>
@@ -117,13 +136,23 @@ export default function EmailSetupForm() {
           )}
         />
 
-        <Button
-          type="submit"
-          disabled={setupMutation.isPending}
-          className="w-full"
-        >
-          Connect Email Account
-        </Button>
+        <div className="flex gap-4">
+          <Button
+            type="submit"
+            disabled={setupMutation.isPending}
+            className="flex-1"
+          >
+            Save Configuration
+          </Button>
+          <Button
+            type="button"
+            onClick={() => startMonitoringMutation.mutate()}
+            disabled={startMonitoringMutation.isPending}
+            className="flex-1"
+          >
+            Start Monitoring
+          </Button>
+        </div>
       </form>
     </Form>
   );

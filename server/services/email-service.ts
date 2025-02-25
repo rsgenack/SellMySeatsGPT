@@ -89,15 +89,15 @@ export class EmailService {
             const email = await this.fetchEmail(messageId);
             console.log('Processing email:', {
               subject: email.subject,
-              from: email.from?.text,
-              to: email.to?.text
+              from: email.from?.value[0]?.address,
+              to: email.to?.value[0]?.address
             });
 
             // Find user by the recipient email
             const [user] = await db
               .select()
               .from(users)
-              .where(eq(users.uniqueEmail, email.to?.text || ''));
+              .where(eq(users.uniqueEmail, email.to?.value[0]?.address || ''));
 
             if (user) {
               console.log('Found matching user:', user.username);
@@ -118,14 +118,14 @@ export class EmailService {
               await storage.createPendingTicket({
                 userId: user.id,
                 emailSubject: email.subject || '',
-                emailFrom: email.from?.text || '',
+                emailFrom: email.from?.value[0]?.address || '',
                 rawEmailData: email,
                 extractedData: ticketInfo,
               });
 
               console.log('Created pending ticket successfully');
             } else {
-              console.log('No matching user found for email:', email.to?.text);
+              console.log('No matching user found for email:', email.to?.value[0]?.address);
             }
           } catch (error) {
             console.error('Error processing email:', error);
