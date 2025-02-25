@@ -84,19 +84,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Tickets
   app.get("/api/tickets", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.isAuthenticated()) {
+      console.log('[Routes] Unauthenticated request to /api/tickets');
+      return res.sendStatus(401);
+    }
 
-    // Ensure we only return tickets for the authenticated user
-    const tickets = await storage.getTickets(req.user.id);
-    console.log(`Fetching tickets for user ${req.user.id}, found ${tickets.length} tickets`);
-    res.json(tickets);
+    try {
+      console.log(`[Routes] Getting tickets for authenticated user: ${req.user.id}`);
+      const tickets = await storage.getTickets(req.user.id);
+      console.log(`[Routes] Successfully retrieved ${tickets.length} tickets for user ${req.user.id}`);
+      res.json(tickets);
+    } catch (error) {
+      console.error('[Routes] Error getting tickets:', error);
+      res.status(500).json({ error: 'Failed to retrieve tickets' });
+    }
   });
 
   app.post("/api/tickets", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    const validated = insertTicketSchema.parse(req.body);
-    const ticket = await storage.createTicket(req.user.id, validated);
-    res.status(201).json(ticket);
+    if (!req.isAuthenticated()) {
+      console.log('[Routes] Unauthenticated request to POST /api/tickets');
+      return res.sendStatus(401);
+    }
+
+    try {
+      console.log(`[Routes] Creating new ticket for user ${req.user.id}:`, req.body);
+      const validated = insertTicketSchema.parse(req.body);
+      const ticket = await storage.createTicket(req.user.id, validated);
+      console.log('[Routes] Successfully created ticket:', ticket);
+      res.status(201).json(ticket);
+    } catch (error) {
+      console.error('[Routes] Error creating ticket:', error);
+      res.status(400).json({ error: 'Failed to create ticket' });
+    }
   });
 
   // Pending Tickets

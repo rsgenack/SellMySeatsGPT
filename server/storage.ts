@@ -46,23 +46,39 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTickets(userId: number): Promise<Ticket[]> {
-    // Add logging to help debug the tickets query
-    console.log(`Querying tickets for userId: ${userId}`);
-    const userTickets = await db.select().from(tickets).where(eq(tickets.userId, userId));
-    console.log(`Found ${userTickets.length} tickets for user ${userId}`);
-    return userTickets;
+    console.log(`[Storage] Getting tickets for userId: ${userId}`);
+    try {
+      const userTickets = await db
+        .select()
+        .from(tickets)
+        .where(eq(tickets.userId, userId));
+
+      console.log(`[Storage] Found ${userTickets.length} tickets:`, userTickets);
+      return userTickets;
+    } catch (error) {
+      console.error('[Storage] Error getting tickets:', error);
+      throw error;
+    }
   }
 
   async createTicket(userId: number, ticket: InsertTicket): Promise<Ticket> {
-    const [newTicket] = await db
-      .insert(tickets)
-      .values({
-        ...ticket,
-        userId,
-        status: "pending",
-      })
-      .returning();
-    return newTicket;
+    console.log(`[Storage] Creating ticket for userId: ${userId}`, ticket);
+    try {
+      const [newTicket] = await db
+        .insert(tickets)
+        .values({
+          ...ticket,
+          userId,
+          status: "pending",
+        })
+        .returning();
+
+      console.log('[Storage] Created new ticket:', newTicket);
+      return newTicket;
+    } catch (error) {
+      console.error('[Storage] Error creating ticket:', error);
+      throw error;
+    }
   }
 
   async getPayments(userId: number): Promise<Payment[]> {
@@ -85,7 +101,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   async confirmPendingTicket(pendingTicketId: number): Promise<Ticket> {
-    // Get the pending ticket
     const [pendingTicket] = await db
       .select()
       .from(pendingTickets)
@@ -95,7 +110,6 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Pending ticket not found");
     }
 
-    // Type assertion for extractedData
     const ticketData = pendingTicket.extractedData as {
       eventName: string;
       eventDate: string;
@@ -105,7 +119,6 @@ export class DatabaseStorage implements IStorage {
       seat: string;
     };
 
-    // Create a new confirmed ticket
     const [confirmedTicket] = await db
       .insert(tickets)
       .values({
@@ -116,12 +129,11 @@ export class DatabaseStorage implements IStorage {
         section: ticketData.section,
         row: ticketData.row,
         seat: ticketData.seat,
-        askingPrice: 0, // Default price, user can update later
+        askingPrice: 0, 
         status: "pending",
       })
       .returning();
 
-    // Update pending ticket status to processed
     await db
       .update(pendingTickets)
       .set({ status: "processed" })
