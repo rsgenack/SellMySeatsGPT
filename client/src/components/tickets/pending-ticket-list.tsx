@@ -42,7 +42,10 @@ export default function PendingTicketList() {
     },
   });
 
-  if (pendingTickets.length === 0) {
+  // Filter to only show pending tickets
+  const pendingOnlyTickets = pendingTickets.filter(ticket => ticket.status === "pending");
+
+  if (pendingOnlyTickets.length === 0) {
     return (
       <div className="text-center text-muted-foreground py-8">
         No pending tickets found. Forward your tickets to your unique email address to add them to your inventory.
@@ -65,7 +68,7 @@ export default function PendingTicketList() {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {pendingTickets.map((ticket) => {
+        {pendingOnlyTickets.map((ticket) => {
           const extractedData = ticket.extractedData as any;
           return (
             <TableRow key={ticket.id}>
@@ -80,14 +83,14 @@ export default function PendingTicketList() {
                 <Button
                   size="sm"
                   onClick={() => confirmMutation.mutate(ticket.id)}
-                  disabled={confirmMutation.isPending || ticket.status !== "pending"}
+                  disabled={confirmMutation.isPending}
                 >
                   Confirm
                 </Button>
               </TableCell>
             </TableRow>
-          )}
-        )}
+          );
+        })}
       </TableBody>
     </Table>
   );
