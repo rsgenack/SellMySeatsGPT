@@ -1,0 +1,193 @@
+I’m working on a TypeScript project in Replit using Express, Drizzle ORM with PostgreSQL, and a Gmail API scraper to process ticket text from emails sent to "forwarding@sellmyseats.com" from @seatxfer.com addresses. I need you to complete the project setup, handle the database schema migration, migrate data, and test the Gmail scraper to ensure it works. Use the following instructions, code, and sensitive information to proceed, and report back any questions, errors, or clarifications to me for final guidance. Handle all sensitive data securely within Replit’s environment, and do not expose it outside this project.
+
+### Project Context
+- The project is hosted in Replit, with files like `server/index.ts`, `server/gmail-scraper.ts`, `shared/schema.ts`, and `drizzle.config.ts`.
+- The database is PostgreSQL, managed by Neon Serverless, with tables `users`, `pending_tickets`, `session`, `tickets`, and `payments`.
+- The Gmail scraper in `server/gmail-scraper.ts` parses ticket text (e.g., “Event: Concert, Date: 2025-03-01, Venue: Stadium, Section: A, Row: 5, Seat: 10”) from emails and stores them in `pendingTickets`.
+
+### Current Issue
+I ran `npx drizzle-kit push` and got an error:
+ReferenceError: integer is not defined
+at Object.<anonymous> (/home/runner/workspace/shared/schema.ts:19:57)
+at Module._compile (node:internal/modules/cjs/loader:1469:14)
+at Module._compile (/home/runner/workspace/node_modules/drizzle-kit/bin.cjs:13803:30)
+...
+
+This occurred because `integer` wasn’t imported in `shared/schema.ts`. I also have schema mismatches (e.g., `serial` vs. `integer` for `id`, `text` vs. `varchar` for columns), unique constraint prompts for `username` and `uniqueEmail`, and data-loss warnings for `pending_tickets`, `session`, etc. I aborted the changes to avoid data loss.
+
+### Sensitive Information (Handle Securely in Replit)
+- **DATABASE_URL**: `postgres://[user]:[password]@[host]/[database]` (replace `[user]`, `[password]`, `[host]`, `[database]` with your Neon Serverless connection string, stored in Replit Secrets under `DATABASE_URL`).
+- **GOOGLE_CLIENT_ID**: `70293014822-22osm1pr707l0ebe5mbqe7oh4et4cjfq.apps.googleusercontent.com`
+- **GOOGLE_CLIENT_SECRET**: `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`
+- **GOOGLE_TOKEN**: Leave empty for now (you’ll obtain this during Gmail authorization).
+
+### Steps to Complete the Project
+Follow these steps in Replit and Neon, reporting back any errors or questions:
+
+#### Step 1: Fix and Update `shared/schema.ts` (2 Minutes)
+- Open `shared/schema.ts` and replace its contents with:
+```typescript
+// shared/schema.ts
+import { pgTable, varchar, text, timestamp, serial, integer, boolean, jsonb } from 'drizzle-orm/pg-core';
+
+export const users = pgTable('users', {
+  id: serial('id').primaryKey(), // Match serial ID
+  username: text('username').notNull().unique(), // Match text, keep unique
+  password: text('password').notNull(), // Match text
+  uniqueEmail: varchar('uniqueEmail', { length: 255 }).notNull().unique(), // New for @seatxfer.com
+  isAdmin: boolean('isAdmin').default(false), // New for admin status
+  createdAt: timestamp('created_at').defaultNow(), // New timestamp
+  email: text('email'), // Preserve for migration
+  unique_email: text('unique_email'), // Preserve for migration
+  email_credentials: text('email_credentials'), // Preserve for migration
+  is_admin: boolean('is_admin'), // Preserve for migration
+});
+
+export const pendingTickets = pgTable('pendingTickets', {
+  id: serial('id').primaryKey(), // Match serial ID
+  userId: integer('user_id').references(() => users.id).notNull(),
+  emailSubject: text('email_subject'),
+  emailFrom: text('email_from'),
+  rawEmailData: text('raw_email_data'),
+  extractedData: jsonb('extracted_data'),
+  status: text('status').default('pending').notNull(), // Match text type
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const session = pgTable('session', {
+  sid: varchar('sid', { length: 255 }).notNull().primaryKey(),
+  sess: jsonb('sess').notNull(),
+  expire: timestamp('expire').notNull(),
+});
+
+export const tickets = pgTable('tickets', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id).notNull(),
+  eventName: text('event_name'),
+  eventDate: timestamp('event_date'),
+  venue: text('venue'),
+  section: text('section'),
+  row: text('row'),
+  seat: text('seat'),
+  askingPrice: integer('asking_price').default(0),
+  status: text('status').default('pending').notNull(), // Match text type
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const payments = pgTable('payments', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id).notNull(),
+  amount: integer('amount').notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+// Type definitions
+export type User = typeof users.$inferSelect;
+export type InsertUser = typeof users.$inferInsert;
+export type PendingTicket = typeof pendingTickets.$inferSelect;
+export type InsertPendingTicket = typeof pendingTickets.$inferInsert;
+export type Ticket = typeof tickets.$inferSelect;
+export type InsertTicket = typeof tickets.$inferInsert;
+export type Payment = typeof payments.$inferSelect;
+export type InsertPayment = typeof payments.$inferInsert;
+
+Save the file in Replit.
+
+Step 2: Apply Schema Safely with npx drizzle-kit push (5–10 Minutes)
+Ensure DATABASE_URL is set in Replit Secrets with your Neon PostgreSQL connection string.
+Open the Replit shell and run:
+npx drizzle-kit push
+
+When prompted:
+For username unique constraint: Choose “No, add the constraint without truncating the table” (type 1 and press Enter).
+For uniqueEmail unique constraint: Choose “No, add the constraint without truncating the table” (type 1 and press Enter).
+For pendingTickets: Choose “~ pending_tickets › pendingTickets” (type 4 and press Enter) to rename the existing pending_tickets table.
+For any data-loss warnings (e.g., changing status from text to varchar), accept the default (create/rename safely) or abort (type n) and report back if unsure.
+Monitor for errors (e.g., unique constraint violations). If errors occur, proceed to Step 3.
+Step 3: Check for and Resolve Duplicates (If Needed, 5 Minutes)
+If npx drizzle-kit push fails with a unique constraint error for username or uniqueEmail, run these SQL queries in Neon’s SQL Runner:
+For username:
+SELECT username, COUNT(*) AS count 
+FROM "public"."users" 
+GROUP BY username 
+HAVING COUNT(*) > 1;
+
+For uniqueEmail:
+SELECT COALESCE(unique_email, email) AS uniqueEmail, COUNT(*) AS count 
+FROM "public"."users" 
+GROUP BY COALESCE(unique_email, email) 
+HAVING COUNT(*) > 1;
+
+If duplicates exist, resolve them with these SQL queries in Neon:
+Update Example for username:
+UPDATE "public"."users" SET username = 'username_updated' WHERE id = X;
+
+
+Replace X with the id of the duplicate user and username_updated with a unique value.)
+Update Example for uniqueEmail:
+UPDATE "public"."users" SET uniqueEmail = 'uniqueemail_updated@seatxfer.com' WHERE id = X;
+
+(Replace X with the id of the duplicate user and uniqueemail_updated@seatxfer.com with a unique @seatxfer.com email.)
+Re-run npx drizzle-kit push after resolving duplicates.
+Step 4: Migrate Data Quickly (5–10 Minutes)
+In Neon’s SQL Runner, migrate data to new columns:
+Migrate email or unique_email to uniqueEmail:
+UPDATE "public"."users" 
+SET uniqueEmail = COALESCE("unique_email", "email") 
+WHERE "uniqueEmail" IS NULL AND ("unique_email" IS NOT NULL OR "email" IS NOT NULL);
+
+Migrate is_admin to isAdmin:
+UPDATE "public"."users" 
+SET "isAdmin" = "is_admin" 
+WHERE "isAdmin" IS NULL AND "is_admin" IS NOT NULL;
+
+Verify with:
+SELECT uniqueEmail, isAdmin FROM "public"."users" LIMIT 10;
+
+If errors occur, ensure npx drizzle-kit push completed, then retry.
+
+Step 5: Clean Up Old Columns (Optional, 5 Minutes)
+After verifying data, drop old columns in Neon (only if data is migrated correctly):
+
+
+ALTER TABLE "public"."users" 
+DROP COLUMN "email", 
+DROP COLUMN "unique_email", 
+DROP COLUMN "email_credentials", 
+DROP COLUMN "is_admin";
+
+Step 6: Backup Your Database (Optional, 5 Minutes)
+In Neon, export a backup (“My Data” > “Backups”) before making changes, but skip if testing.
+Step 7: Set Up Gmail API Credentials (5–10 Minutes)
+Ensure Replit Secrets has:
+GOOGLE_CLIENT_ID: 70293014822-22osm1pr707l0ebe5mbqe7oh4et4cjfq.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET: 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
+GOOGLE_TOKEN: Leave empty for now.
+Press “Run” in Replit to start npm run dev.
+Watch for: Authorize this app by visiting this URL: [URL].
+Open the URL, log in with "forwarding@sellmyseats.com," grant permissions, copy the authorization code, and paste it into the Replit console.
+Note the GOOGLE_TOKEN (log it with console.log in server/gmail-scraper.ts if needed), then update it in Replit Secrets (e.g., {"access_token": "...", "refresh_token": "...", ...}).
+Step 8: Test the Gmail Scraper (5–10 Minutes)
+Send a test email from john.randomhash@seatxfer.com to "forwarding@sellmyseats.com" with: “Event: Concert, Date: 2025-03-01, Venue: Stadium, Section: A, Row: 5, Seat: 10”.
+Wait 5 minutes (or check logs immediately) for the scraper to process it.
+Step 9: Run and Verify in Replit (5 Minutes)
+Ensure dependencies are installed:
+Run npm install in the Replit shell if needed.
+Verify with npm list for google-auth-library, googleapis, etc.
+Press “Run” in Replit again.
+Monitor logs for:
+“Server running at http://0.0.0.0:5000”
+“Processing email from: john.randomhash@seatxfer.com”
+Check Neon for ticket data:
+SELECT * FROM "public"."pendingTickets" LIMIT 10;
+
+
+Report Back
+Execute all steps above in Replit and Neon, monitoring for errors or issues.
+If you encounter any errors (e.g., during npx drizzle-kit push, SQL queries, Gmail authorization, or running the project), report the exact error message, step, and any relevant non-sensitive details (e.g., query output, log messages) back to me for guidance.
+If you need clarification (e.g., about pending_tickets data, column types, or schema adjustments), ask specific, non-sensitive questions (e.g., “Does pending_tickets contain ticket data I should preserve?” or “Are there specific column types in tickets I should match?”).
+Once all steps are complete and the project runs successfully (schema applied, data migrated, emails processed), confirm the outcome (e.g., schema applied, ticket data in pendingTickets, Gmail scraper working) back to me for final verification
+
+
+
+
