@@ -6,7 +6,6 @@ import { insertTicketSchema, insertPaymentSchema } from "@shared/schema";
 import { eq } from 'drizzle-orm';
 import { db } from './db';
 import { users } from '@shared/schema';
-import { EmailService } from "./services/email-service";
 import { config } from 'dotenv';
 import { requireAdmin } from "./middleware/admin";
 import { GmailScraper } from './gmail-scraper';
@@ -15,6 +14,10 @@ config();
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
+
+  // Initialize Gmail scraper
+  const scraper = new GmailScraper();
+  scraper.startMonitoring();
 
   // Add user profile endpoint
   app.get("/api/profile", async (req, res) => {
@@ -36,48 +39,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Admin-only email configuration endpoints
-  app.post("/api/admin/email-setup", requireAdmin, async (req, res) => {
-    if (!req.body.user || !req.body.password || !req.body.host || !req.body.port) {
-      return res.status(400).json({ error: "Missing required email configuration" });
-    }
-
-    try {
-      console.log('Testing IMAP connection with settings:', {
-        user: req.body.user,
-        host: req.body.host,
-        port: req.body.port,
-        tls: true
-      });
-
-      const emailService = EmailService.getInstance({
-        user: req.body.user,
-        password: req.body.password,
-        host: req.body.host,
-        port: req.body.port,
-        tls: true
-      });
-
-      await emailService.startMonitoring();
-      const status = emailService.getStatus();
-
-      res.json({ 
-        message: "Email configuration saved and monitoring started",
-        status: status
-      });
-    } catch (error) {
-      console.error("Email setup error:", error);
-      res.status(500).json({ 
-        error: "Failed to configure email service",
-        details: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  });
-
   // Gmail scraper authorization status
   app.get("/api/gmail/status", requireAdmin, async (req, res) => {
     try {
-      const scraper = new GmailScraper();
       const isAuthenticated = await scraper.authenticate();
       res.json({
         isAuthenticated,
@@ -91,33 +55,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-
-  // Gmail authentication routes
-  app.get("/api/gmail/auth", requireAdmin, async (req, res) => {
-    const scraper = new GmailScraper();
-    const isAuthenticated = await scraper.authenticate();
-    if (isAuthenticated) {
-      res.json({ status: 'already_authenticated' });
-    } else {
-      res.json({ status: 'needs_authentication' });
-    }
-  });
-
+  // Gmail authentication callback
   app.get("/api/gmail/callback", requireAdmin, async (req, res) => {
     const { code } = req.query;
     if (!code || typeof code !== 'string') {
       return res.status(400).json({ error: 'Authorization code required' });
     }
 
-    const scraper = new GmailScraper();
-    const success = await scraper.handleAuthCallback(code);
-
-    if (success) {
+    try {
+      await scraper.handleAuthCallback(code);
+      await scraper.startMonitoring();
       res.json({ status: 'authenticated' });
-      // Start monitoring after successful authentication
-      scraper.startMonitoring();
-    } else {
-      res.status(500).json({ error: 'Failed to authenticate with Gmail' });
+    } catch (error) {
+      console.error("Gmail authentication error:", error);
+      res.status(500).json({ error: "Failed to authenticate with Gmail" });
     }
   });
 

@@ -12,8 +12,12 @@ export class GmailScraper {
 
   constructor() {
     const redirectUri = process.env.REPL_SLUG && process.env.REPL_OWNER
-      ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`
-      : 'http://localhost:5000';
+      ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co/api/gmail/callback`
+      : 'http://localhost:5000/api/gmail/callback';
+
+    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+      throw new Error('Google OAuth credentials are required');
+    }
 
     this.oauth2Client = new OAuth2Client(
       process.env.GOOGLE_CLIENT_ID,
@@ -22,21 +26,15 @@ export class GmailScraper {
     );
   }
 
-  async authenticate() {
+  async authenticate(): Promise<boolean> {
     try {
-      if (!process.env.GOOGLE_TOKEN) {
-        const authUrl = this.oauth2Client.generateAuthUrl({
-          access_type: 'offline',
-          scope: SCOPES,
-          prompt: 'consent'
-        });
-        console.log('Authorize this app by visiting this URL:', authUrl);
-        return false;
-      }
-
-      this.oauth2Client.setCredentials(JSON.parse(process.env.GOOGLE_TOKEN));
-      this.gmail = google.gmail({ version: 'v1', auth: this.oauth2Client });
-      return true;
+      const authUrl = this.oauth2Client.generateAuthUrl({
+        access_type: 'offline',
+        scope: SCOPES,
+        prompt: 'consent'
+      });
+      console.log('Authorize this app by visiting this URL:', authUrl);
+      return false;
     } catch (error) {
       console.error('Error during Gmail authentication:', error);
       return false;
