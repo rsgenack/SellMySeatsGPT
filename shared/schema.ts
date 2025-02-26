@@ -1,4 +1,3 @@
-// shared/schema.ts
 import { pgTable, varchar, text, timestamp, serial, integer, boolean, jsonb } from 'drizzle-orm/pg-core';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
@@ -10,10 +9,6 @@ export const users = pgTable('users', {
   uniqueEmail: varchar('uniqueEmail', { length: 255 }).notNull().unique(),
   isAdmin: boolean('isAdmin').default(false),
   createdAt: timestamp('created_at').defaultNow(),
-  email: text('email'),
-  unique_email: text('unique_email'),
-  email_credentials: text('email_credentials'),
-  is_admin: boolean('is_admin'),
 });
 
 export const pendingTickets = pgTable('pendingTickets', {

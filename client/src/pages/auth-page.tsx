@@ -13,9 +13,20 @@ import {
 import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertUserSchema } from "@shared/schema";
+import { z } from "zod";
 import { useLocation } from "wouter";
 import { Loader2 } from "lucide-react";
+
+// Create a simplified schema for registration that matches our backend expectations
+const registerSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+const loginSchema = registerSchema;
+
+type RegisterData = z.infer<typeof registerSchema>;
+type LoginData = z.infer<typeof loginSchema>;
 
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
@@ -46,7 +57,7 @@ export default function AuthPage() {
           </CardContent>
         </Card>
       </div>
-      
+
       <div className="hidden md:flex items-center justify-center bg-muted/30 p-8">
         <div className="max-w-md">
           <h1 className="text-4xl font-bold mb-6">
@@ -63,8 +74,8 @@ export default function AuthPage() {
 
 function LoginForm() {
   const { loginMutation } = useAuth();
-  const form = useForm({
-    resolver: zodResolver(insertUserSchema.pick({ username: true, password: true })),
+  const form = useForm<LoginData>({
+    resolver: zodResolver(loginSchema),
     defaultValues: {
       username: "",
       password: "",
@@ -120,12 +131,11 @@ function LoginForm() {
 
 function RegisterForm() {
   const { registerMutation } = useAuth();
-  const form = useForm({
-    resolver: zodResolver(insertUserSchema),
+  const form = useForm<RegisterData>({
+    resolver: zodResolver(registerSchema),
     defaultValues: {
       username: "",
       password: "",
-      email: "",
     },
   });
 
@@ -143,19 +153,6 @@ function RegisterForm() {
               <FormLabel>Username</FormLabel>
               <FormControl>
                 <Input {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input type="email" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

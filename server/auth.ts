@@ -83,28 +83,35 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/register", async (req, res, next) => {
-    const existingUser = await storage.getUserByUsername(req.body.username);
-    if (existingUser) {
-      return res.status(400).send("Username already exists");
+    const { username, password } = req.body;
+
+    try {
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+
+      const uniqueEmail = generateUniqueEmail(username);
+      const user = await storage.createUser({
+        username,
+        password: await hashPassword(password),
+        uniqueEmail
+      });
+
+      // Add isAdmin flag for the newly registered user
+      const userWithAdmin = {
+        ...user,
+        isAdmin: user.username === 'admin'
+      };
+
+      req.login(userWithAdmin, (err) => {
+        if (err) return next(err);
+        res.status(201).json(userWithAdmin);
+      });
+    } catch (error) {
+      console.error('Registration error:', error);
+      res.status(500).json({ message: "Internal server error during registration" });
     }
-
-    const uniqueEmail = generateUniqueEmail(req.body.username);
-    const user = await storage.createUser({
-      ...req.body,
-      password: await hashPassword(req.body.password),
-      uniqueEmail,
-    });
-
-    // Add isAdmin flag for the newly registered user
-    const userWithAdmin = {
-      ...user,
-      isAdmin: user.username === 'admin'
-    };
-
-    req.login(userWithAdmin, (err) => {
-      if (err) return next(err);
-      res.status(201).json(userWithAdmin);
-    });
   });
 
   app.post("/api/login", passport.authenticate("local"), (req, res) => {
