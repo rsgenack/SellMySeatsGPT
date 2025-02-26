@@ -163,7 +163,7 @@ export class EmailService {
 
   private async processNewEmails() {
     try {
-      console.log('Starting email processing...');
+      console.log('Starting email processing with verbose logging...');
       await this.promisifyImapOpen();
       this.status.lastChecked = new Date();
 
@@ -175,7 +175,7 @@ export class EmailService {
             return;
           }
 
-          console.log('Opened inbox, searching for emails...');
+          console.log('Successfully opened INBOX, box info:', box);
 
           try {
             // First try to get all emails in the inbox
@@ -185,11 +185,11 @@ export class EmailService {
             console.log(`Found ${results.length} total emails in inbox`);
             this.status.recentEmails = [];
 
-            // Process the most recent 10 emails first
-            const recentEmails = results.slice(-10);
-            console.log(`Processing ${recentEmails.length} most recent emails`);
+            // Process all emails from newest to oldest
+            const emailsToProcess = results.reverse().slice(0, 20); // Process last 20 emails
+            console.log(`Processing ${emailsToProcess.length} most recent emails`);
 
-            for (const messageId of recentEmails) {
+            for (const messageId of emailsToProcess) {
               try {
                 const email = await this.fetchEmail(messageId);
                 console.log('Processing email:', {
@@ -197,7 +197,8 @@ export class EmailService {
                   subject: email.subject,
                   from: email.from?.text,
                   to: email.to?.text,
-                  date: email.date
+                  date: email.date,
+                  textAsHtml: email.textAsHtml?.substring(0, 100) // First 100 chars of content
                 });
 
                 const emailInfo = {
@@ -206,6 +207,10 @@ export class EmailService {
                   date: email.date || new Date(),
                   status: 'pending' as const
                 };
+
+                // Try to parse ticket information from email body
+                const ticketInfo = this.parseTicketInfo(email.text || '');
+                console.log('Extracted ticket info:', ticketInfo);
 
                 const [user] = await db
                   .select()
@@ -221,17 +226,17 @@ export class EmailService {
                     emailFrom: email.from?.text || '',
                     rawEmailData: email,
                     extractedData: {
-                      eventName: email.subject?.split(' - ')[0] || '',
-                      eventDate: email.date?.toISOString() || '',
-                      venue: email.text || '',
-                      section: '',
-                      row: '',
-                      seat: '',
+                      eventName: ticketInfo.eventName || email.subject?.split(' - ')[0] || '',
+                      eventDate: ticketInfo.eventDate || email.date?.toISOString() || '',
+                      venue: ticketInfo.venue || '',
+                      section: ticketInfo.section || '',
+                      row: ticketInfo.row || '',
+                      seat: ticketInfo.seat || '',
                     },
                   });
 
                   emailInfo.status = 'processed';
-                  console.log('Successfully processed email:', email.subject);
+                  console.log('Successfully processed email and created pending ticket');
                 } else {
                   console.log('No matching user found for email address:', email.to?.text);
                   emailInfo.status = 'error';
@@ -263,6 +268,36 @@ export class EmailService {
         this.imap.end();
       }
     }
+  }
+
+  private parseTicketInfo(emailText: string) {
+    const info: {
+      eventName?: string;
+      eventDate?: string;
+      venue?: string;
+      section?: string;
+      row?: string;
+      seat?: string;
+    } = {};
+
+    // Simple pattern matching for common ticket information formats
+    const patterns = {
+      eventName: /Event:\s*([^\n]+)/i,
+      eventDate: /Date:\s*([^\n]+)/i,
+      venue: /Venue:\s*([^\n]+)/i,
+      section: /Section:\s*([^\n]+)/i,
+      row: /Row:\s*([^\n]+)/i,
+      seat: /Seat:\s*([^\n]+)/i,
+    };
+
+    for (const [key, pattern] of Object.entries(patterns)) {
+      const match = emailText.match(pattern);
+      if (match && match[1]) {
+        info[key as keyof typeof info] = match[1].trim();
+      }
+    }
+
+    return info;
   }
 
   private promisifyImapSearch(criteria: any[]): Promise<number[]> {
