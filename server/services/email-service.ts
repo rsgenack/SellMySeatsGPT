@@ -1,5 +1,5 @@
+import { simpleParser, type ParsedMail, type AddressObject } from 'mailparser';
 import Imap from 'imap';
-import { simpleParser, ParsedMail } from 'mailparser';
 import { storage } from '../storage';
 import { db } from '../db';
 import { users } from '@shared/schema';
@@ -90,27 +90,6 @@ export class EmailService {
     return this.status;
   }
 
-  private async promisifyImapOpen(): Promise<boolean> {
-    return new Promise((resolve, reject) => {
-      this.imap.once('ready', () => {
-        console.log('IMAP connection established');
-        this.status.isConnected = true;
-        resolve(true);
-      });
-
-      this.imap.once('error', (err) => {
-        this.status.isConnected = false;
-        reject(err);
-      });
-
-      try {
-        this.imap.connect();
-      } catch (err) {
-        reject(err);
-      }
-    });
-  }
-
   public async startMonitoring(): Promise<void> {
     try {
       await this.processNewEmails();
@@ -141,13 +120,13 @@ export class EmailService {
     }
   }
 
-  private async processNewEmails() {
+  private async processNewEmails(): Promise<void> {
     try {
       console.log('Starting email processing with detailed logging...');
       await this.promisifyImapOpen();
       this.status.lastChecked = new Date();
 
-      return new Promise((resolve, reject) => {
+      await new Promise((resolve, reject) => {
         this.imap.openBox('INBOX', false, async (err, box) => {
           if (err) {
             console.error('Error opening inbox:', err);
@@ -171,23 +150,25 @@ export class EmailService {
             for (const messageId of emailsToProcess) {
               try {
                 const email = await this.fetchEmail(messageId);
+                const toAddress = (email.to as AddressObject)?.text || '';
+                const fromAddress = (email.from as AddressObject)?.text || '';
+
                 console.log('Processing email:', {
                   messageId,
                   subject: email.subject,
-                  from: email.from?.text,
-                  to: email.to?.text,
-                  date: email.date,
-                  textAsHtml: email.textAsHtml?.substring(0, 100) // First 100 chars of content
+                  from: fromAddress,
+                  to: toAddress,
+                  date: email.date
                 });
 
                 const emailInfo = {
                   subject: email.subject || '',
-                  from: email.from?.text || '',
+                  from: fromAddress,
                   date: email.date || new Date(),
                   status: 'pending' as const
                 };
 
-                // Extract ticket information using multiple parsing strategies
+                // Extract ticket information
                 const ticketInfo = await this.extractTicketInfo(email);
                 console.log('Extracted ticket info:', ticketInfo);
 
@@ -195,28 +176,28 @@ export class EmailService {
                 const [user] = await db
                   .select()
                   .from(users)
-                  .where(eq(users.uniqueEmail, email.to?.text || ''));
+                  .where(eq(users.uniqueEmail, toAddress));
 
                 if (user) {
                   console.log('Found matching user for email:', {
                     username: user.username,
                     uniqueEmail: user.uniqueEmail,
-                    emailTo: email.to?.text
+                    emailTo: toAddress
                   });
 
                   await storage.createPendingTicket({
                     userId: user.id,
                     emailSubject: email.subject || '',
-                    emailFrom: email.from?.text || '',
+                    emailFrom: fromAddress,
                     rawEmailData: email,
                     extractedData: ticketInfo,
                   });
 
-                  emailInfo.status = 'processed';
+                  emailInfo.status = 'processed' as const;
                   console.log('Successfully processed email and created pending ticket');
                 } else {
-                  console.log('No matching user found for email address:', email.to?.text);
-                  emailInfo.status = 'error';
+                  console.log('No matching user found for email address:', toAddress);
+                  emailInfo.status = 'error' as const;
                 }
 
                 this.status.recentEmails.push(emailInfo);
@@ -226,7 +207,7 @@ export class EmailService {
                   subject: 'Error processing email',
                   from: 'unknown',
                   date: new Date(),
-                  status: 'error'
+                  status: 'error' as const
                 });
               }
             }
@@ -282,7 +263,7 @@ export class EmailService {
         }
       }
 
-      // Strategy 2: Parse subject line for event name and date
+      // Strategy 2: Parse subject line for event name
       if (!info.eventName && email.subject) {
         const subjectParts = email.subject.split(' - ');
         if (subjectParts.length > 0) {
@@ -317,7 +298,7 @@ export class EmailService {
 
   private promisifyImapSearch(criteria: any[]): Promise<number[]> {
     return new Promise((resolve, reject) => {
-      this.imap.search(criteria, (err, results) => {
+      this.imap.search(criteria, (err: Error | null, results: number[]) => {
         if (err) reject(err);
         else resolve(results);
       });
@@ -340,6 +321,27 @@ export class EmailService {
       });
 
       fetch.once('error', reject);
+    });
+  }
+
+  private async promisifyImapOpen(): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      this.imap.once('ready', () => {
+        console.log('IMAP connection established');
+        this.status.isConnected = true;
+        resolve(true);
+      });
+
+      this.imap.once('error', (err) => {
+        this.status.isConnected = false;
+        reject(err);
+      });
+
+      try {
+        this.imap.connect();
+      } catch (err) {
+        reject(err);
+      }
     });
   }
 }
