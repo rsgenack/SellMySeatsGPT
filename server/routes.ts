@@ -126,17 +126,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Pending Tickets
   app.get("/api/pending-tickets", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    const pendingTickets = await storage.getPendingTickets(req.user.id);
-    res.json(pendingTickets);
+    if (!req.isAuthenticated()) {
+      console.log('[Routes] Unauthenticated request to /api/pending-tickets');
+      return res.sendStatus(401);
+    }
+
+    try {
+      console.log(`[Routes] Getting pending tickets for user ${req.user.id}`);
+      const pendingTickets = await storage.getPendingTickets(req.user.id);
+      console.log(`[Routes] Successfully retrieved ${pendingTickets.length} pending tickets`);
+      res.json(pendingTickets);
+    } catch (error) {
+      console.error('[Routes] Error getting pending tickets:', error);
+      res.status(500).json({ error: 'Failed to retrieve pending tickets' });
+    }
   });
 
   app.post("/api/pending-tickets/:id/confirm", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.isAuthenticated()) {
+      console.log('[Routes] Unauthenticated request to confirm pending ticket');
+      return res.sendStatus(401);
+    }
+
     try {
+      console.log(`[Routes] Confirming pending ticket ${req.params.id}`);
       const ticket = await storage.confirmPendingTicket(parseInt(req.params.id));
+      console.log('[Routes] Successfully confirmed pending ticket:', ticket);
       res.json(ticket);
-    } catch (error: unknown) {
+    } catch (error) {
+      console.error('[Routes] Error confirming pending ticket:', error);
       const err = error as Error;
       res.status(400).json({ error: err.message });
     }
