@@ -61,7 +61,13 @@ export default function DashboardPage() {
         </div>
       </nav>
 
-      {user?.isAdmin && <AdminNav />}
+      {user?.isAdmin && (
+        <div className="bg-muted">
+          <div className="container mx-auto py-2">
+            <AdminNav />
+          </div>
+        </div>
+      )}
 
       <main className="container mx-auto py-8 px-4">
         <Card className="mb-8">
