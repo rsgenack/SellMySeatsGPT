@@ -1,0 +1,70 @@
+I’m working on a TypeScript project in Replit using Express, Drizzle ORM with PostgreSQL, and a Gmail API scraper. I need you to complete the project setup by handling the database schema migration, migrating data, and preparing the project to run the Gmail scraper for ticket text. Use the following instructions and code snippets to proceed, and report back any questions, errors, or clarifications needed. Stay within these bounds: don’t ask for or suggest handling sensitive data like database URLs, API keys, or full file contents. Focus only on the schema, Drizzle ORM usage, safe SQL queries, and project setup steps. If you need clarification, report specific, non-sensitive questions back to me.
+
+### Step 1: Update `shared/schema.ts` to Match the Database
+Modify the `shared/schema.ts` file in Replit to match the existing database structure and avoid data loss. Use this code (replace the current contents):
+
+```typescript
+// shared/schema.ts
+import { pgTable, varchar, text, timestamp, serial, boolean, jsonb } from 'drizzle-orm/pg-core';
+
+export const users = pgTable('users', {
+  id: serial('id').primaryKey(), // Match existing serial ID
+  username: text('username').notNull().unique(), // Match existing text type, keep unique constraint
+  password: text('password').notNull(), // Match existing text type
+  uniqueEmail: varchar('uniqueEmail', { length: 255 }).notNull().unique(), // New column for @seatxfer.com emails
+  isAdmin: boolean('isAdmin').default(false), // New column for admin status
+  createdAt: timestamp('created_at').defaultNow(), // New column for creation timestamp
+  // Preserve existing columns temporarily to avoid data loss
+  email: text('email'), // Existing column, will migrate to uniqueEmail
+  unique_email: text('unique_email'), // Existing column, will migrate to uniqueEmail
+  email_credentials: text('email_credentials'), // Existing column, can be dropped later
+  is_admin: boolean('is_admin'), // Existing column, will migrate to isAdmin
+});
+
+export const pendingTickets = pgTable('pendingTickets', {
+  id: serial('id').primaryKey(), // Use serial for auto-incrementing IDs
+  userId: integer('user_id').references(() => users.id).notNull(),
+  emailSubject: text('email_subject'),
+  emailFrom: text('email_from'),
+  rawEmailData: text('raw_email_data'),
+  extractedData: jsonb('extracted_data'),
+  status: varchar('status', { length: 50 }).default('pending').notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const session = pgTable('session', {
+  sid: varchar('sid', { length: 255 }).notNull().primaryKey(),
+  sess: jsonb('sess').notNull(),
+  expire: timestamp('expire').notNull(),
+});
+
+export const tickets = pgTable('tickets', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id).notNull(),
+  eventName: text('event_name'),
+  eventDate: timestamp('event_date'),
+  venue: text('venue'),
+  section: text('section'),
+  row: text('row'),
+  seat: text('seat'),
+  askingPrice: integer('asking_price').default(0),
+  status: varchar('status', { length: 50 }).default('pending').notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const payments = pgTable('payments', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id).notNull(),
+  amount: integer('amount').notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+// Type definitions
+export type User = typeof users.$inferSelect;
+export type InsertUser = typeof users.$inferInsert;
+export type PendingTicket = typeof pendingTickets.$inferSelect;
+export type InsertPendingTicket = typeof pendingTickets.$inferInsert;
+export type Ticket = typeof tickets.$inferSelect;
+export type InsertTicket = typeof tickets.$inferInsert;
+export type Payment = typeof payments.$inferSelect;
+export type InsertPayment = typeof payments.$inferInsert;

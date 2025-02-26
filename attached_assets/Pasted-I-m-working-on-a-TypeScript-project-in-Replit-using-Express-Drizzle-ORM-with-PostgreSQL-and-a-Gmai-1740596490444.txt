@@ -1,0 +1,164 @@
+I’m working on a TypeScript project in Replit using Express, Drizzle ORM with PostgreSQL, and a Gmail API scraper. I need you to complete the project setup by handling the database schema migration, migrating data, and preparing the project to run the Gmail scraper for ticket text. Use the following instructions and code snippets to proceed, and report back any questions, errors, or clarifications needed. Stay within these bounds: don’t ask for or suggest handling sensitive data like database URLs, API keys, or full file contents. Focus only on the schema, Drizzle ORM usage, safe SQL queries, and project setup steps. If you need clarification, report specific, non-sensitive questions back to me.
+
+### Step 1: Update `shared/schema.ts` to Match the Database
+Modify the `shared/schema.ts` file in Replit to match the existing database structure and avoid data loss. Use this code (replace the current contents):
+
+```typescript
+// shared/schema.ts
+import { pgTable, varchar, text, timestamp, serial, boolean, jsonb } from 'drizzle-orm/pg-core';
+
+export const users = pgTable('users', {
+  id: serial('id').primaryKey(), // Match existing serial ID
+  username: text('username').notNull().unique(), // Match existing text type, keep unique constraint
+  password: text('password').notNull(), // Match existing text type
+  uniqueEmail: varchar('uniqueEmail', { length: 255 }).notNull().unique(), // New column for @seatxfer.com emails
+  isAdmin: boolean('isAdmin').default(false), // New column for admin status
+  createdAt: timestamp('created_at').defaultNow(), // New column for creation timestamp
+  // Preserve existing columns temporarily to avoid data loss
+  email: text('email'), // Existing column, will migrate to uniqueEmail
+  unique_email: text('unique_email'), // Existing column, will migrate to uniqueEmail
+  email_credentials: text('email_credentials'), // Existing column, can be dropped later
+  is_admin: boolean('is_admin'), // Existing column, will migrate to isAdmin
+});
+
+export const pendingTickets = pgTable('pendingTickets', {
+  id: serial('id').primaryKey(), // Use serial for auto-incrementing IDs
+  userId: integer('user_id').references(() => users.id).notNull(),
+  emailSubject: text('email_subject'),
+  emailFrom: text('email_from'),
+  rawEmailData: text('raw_email_data'),
+  extractedData: jsonb('extracted_data'),
+  status: varchar('status', { length: 50 }).default('pending').notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const session = pgTable('session', {
+  sid: varchar('sid', { length: 255 }).notNull().primaryKey(),
+  sess: jsonb('sess').notNull(),
+  expire: timestamp('expire').notNull(),
+});
+
+export const tickets = pgTable('tickets', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id).notNull(),
+  eventName: text('event_name'),
+  eventDate: timestamp('event_date'),
+  venue: text('venue'),
+  section: text('section'),
+  row: text('row'),
+  seat: text('seat'),
+  askingPrice: integer('asking_price').default(0),
+  status: varchar('status', { length: 50 }).default('pending').notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const payments = pgTable('payments', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id).notNull(),
+  amount: integer('amount').notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+// Type definitions
+export type User = typeof users.$inferSelect;
+export type InsertUser = typeof users.$inferInsert;
+export type PendingTicket = typeof pendingTickets.$inferSelect;
+export type InsertPendingTicket = typeof pendingTickets.$inferInsert;
+export type Ticket = typeof tickets.$inferSelect;
+export type InsertTicket = typeof tickets.$inferInsert;
+export type Payment = typeof payments.$inferSelect;
+export type InsertPayment = typeof payments.$inferInsert;
+Save this file in Replit, overwriting the existing shared/schema.ts.
+
+Step 2: Re-run npx drizzle-kit push with Safe Choices
+Open the Replit shell and run:
+npx drizzle-kit push
+
+When prompted:
+For username unique constraint: Choose “No, add the constraint without truncating the table” (type 1 and press Enter).
+For uniqueEmail unique constraint: Choose “No, add the constraint without truncating the table” (type 1 and press Enter).
+For pendingTickets: Choose “~ pending_tickets › pendingTickets” (type 4 and press Enter) to rename the existing pending_tickets table to pendingTickets.
+For any prompts about deleting session, tickets, payments, or changing column types, accept the default (create/rename safely) or abort if unsure (type n and report the prompt back to me for guidance).
+Monitor for errors (e.g., unique constraint violations for username or uniqueEmail). If errors occur, proceed to Step 3.
+Step 3: Check for and Resolve Duplicates (If Needed)
+If npx drizzle-kit push fails with a unique constraint error for username or uniqueEmail, run these SQL queries in Neon’s SQL Runner:
+For username:
+SELECT username, COUNT(*) AS count 
+FROM "public"."users" 
+GROUP BY username 
+HAVING COUNT(*) > 1;
+
+For uniqueEmail:
+SELECT uniqueEmail, COUNT(*) AS count 
+FROM "public"."users" 
+GROUP BY uniqueEmail 
+HAVING COUNT(*) > 1;
+
+
+If duplicates exist, resolve them with these safe SQL queries in Neon:
+Update Example for username:
+UPDATE "public"."users" SET username = 'username_updated' WHERE id = X;
+
+(Replace X with the id of the duplicate user and username_updated with a unique value, like username1 or username2.)
+Update Example for uniqueEmail
+UPDATE "public"."users" SET uniqueEmail = 'uniqueemail_updated@seatxfer.com' WHERE id = X;
+
+
+(Replace X with the id of the duplicate user and uniqueemail_updated@seatxfer.com with a unique @seatxfer.com email.)
+Delete Example (if a user is redundant):
+DELETE FROM "public"."users" WHERE id = Y;
+
+(Replace Y with the id of the user you want to remove.)
+Re-run npx drizzle-kit push after resolving duplicates.
+
+Step 4: Migrate Data Between Columns
+After npx drizzle-kit push succeeds, migrate data from existing columns to new ones in the users table using these SQL queries in Neon:
+Migrate email or unique_email to uniqueEmail:
+UPDATE "public"."users" 
+SET uniqueEmail = COALESCE("unique_email", "email") 
+WHERE "uniqueEmail" IS NULL AND ("unique_email" IS NOT NULL OR "email" IS NOT NULL);
+
+Migrate is_admin to isAdmin:
+UPDATE "public"."users" 
+SET "isAdmin" = "is_admin" 
+WHERE "isAdmin" IS NULL AND "is_admin" IS NOT NULL;
+
+If these queries fail (e.g., relation "users" does not exist), ensure you’re using "public"."users" and report the error back to me.
+
+Step 5: Clean Up Old Columns (Optional)
+After verifying data migration, drop old columns (email, unique_email, email_credentials, is_admin) to match the final schema, if desired:
+ALTER TABLE "public"."users" 
+DROP COLUMN "email", 
+DROP COLUMN "unique_email", 
+DROP COLUMN "email credentials", 
+DROP COLUMN "is_admin";
+
+Run this in Neon only after confirming uniqueEmail and isAdmin contain the correct data.
+Step 6: Backup Your Database
+In Neon, export a backup (“My Data” > “Backups” or use pg_dump if available) before making schema or data changes to prevent data loss.
+Step 7: Proceed with Project Setup
+Ensure dependencies are installed:
+In the Replit shell, run:
+npm install
+
+Verify with npm list that google-auth-library, googleapis, esbuild, and imap are installed.
+Run npm audit to confirm vulnerabilities are minimized (proceed if non-critical).
+Authorize the Gmail API:
+Press “Run” in Replit to start the server (this runs npm run dev).
+Watch for: Authorize this app by visiting this URL: [URL].
+Open the URL, log in with "forwarding@sellmyseats.com," grant permissions, and copy the authorization code.
+Paste the code into the Replit console.
+Note the GOOGLE_TOKEN (log it with console.log in server/gmail-scraper.ts if needed).
+Update GOOGLE_TOKEN in Replit Secrets with the JSON token string (e.g., {"access_token": "...", "refresh_token": "...", ...}) and save.
+Test with a Sample Email:
+Ensure a test email from a @seatxfer.com address (e.g., john.randomhash@seatxfer.com) to "forwarding@sellmyseats.com" with ticket text (e.g., “Event: Concert, Date: 2025-03-01, Venue: Stadium, Section: A, Row: 5, Seat: 10”) is sent.
+The scraper will check this every 5 minutes (or immediately on the first run).
+Run and Verify:
+Press “Run” in Replit again (or keep it running).
+Monitor logs for success messages (e.g., “Server running at http://0.0.0.0:5000” and “Processing email from: john.randomhash@seatxfer.com”).
+Check Neon for ticket data in pendingTickets.
+Report Back
+Execute all steps above in Replit and Neon, monitoring for errors or issues.
+If you encounter any errors (e.g., during npx drizzle-kit push, SQL queries, Gmail authorization, or running the project), report the exact error message and step back to me for guidance.
+If you need clarification (e.g., about pending_tickets data, column types, or schema adjustments), ask specific, non-sensitive questions (e.g., “Does pending_tickets contain ticket data I should preserve?” or “Are there specific column types in tickets I should match?”).
+Once all steps are complete and the project runs successfully, confirm the outcome (e.g., schema applied, data migrated, emails processed) back to me.
