@@ -1,6 +1,8 @@
+// server/index.ts
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { initGmailScraper } from "./gmail-scraper"; // Import the scraper
 
 const app = express();
 app.use(express.json());
@@ -54,6 +56,9 @@ app.use((req, res, next) => {
       console.log("Setting up static file serving for production...");
       serveStatic(app);
     }
+
+    // Initialize Gmail scraper
+    await initGmailScraper();
 
     // Always serve on port 5000
     const port = 5000;

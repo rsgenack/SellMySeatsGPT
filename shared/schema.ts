@@ -1,59 +1,45 @@
-import { pgTable, text, serial, integer, timestamp, jsonb } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod";
+// shared/schema.ts
+import { pgTable, varchar, text, timestamp, integer, boolean, jsonb } from 'drizzle-orm/pg-core';
 
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
-  email: text("email").notNull(),
-  uniqueEmail: text("unique_email"),
+export const users = pgTable('users', {
+  id: integer('id').primaryKey().notNull(),
+  username: varchar('username', { length: 255 }).notNull().unique(),
+  password: varchar('password', { length: 255 }).notNull(),
+  uniqueEmail: varchar('uniqueEmail', { length: 255 }).notNull().unique(), // e.g., "john.randomhash@seatxfer.com"
+  isAdmin: boolean('isAdmin').default(false), // Use the imported boolean from pg-core
+  createdAt: timestamp('created_at').defaultNow(),
 });
 
-export const tickets = pgTable("tickets", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
-  eventName: text("event_name").notNull(),
-  eventDate: text("event_date").notNull(),
-  venue: text("venue").notNull(),
-  section: text("section").notNull(),
-  row: text("row").notNull(),
-  seat: text("seat").notNull(),
-  askingPrice: integer("asking_price").notNull(),
-  status: text("status").notNull().default("pending"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
+export const tickets = pgTable('tickets', {
+  id: integer('id').primaryKey().notNull(),
+  userId: integer('user_id').references(() => users.id).notNull(),
+  filePath: text('file_path').notNull(), // This can be removed or replaced if not needed for text tickets
+  eventName: text('event_name'),
+  eventDate: timestamp('event_date'),
+  venue: text('venue'),
+  section: text('section'),
+  row: text('row'),
+  seat: text('seat'),
+  askingPrice: integer('asking_price').default(0),
+  status: varchar('status', { length: 50 }).default('pending').notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
 });
 
-export const payments = pgTable("payments", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
-  ticketId: integer("ticket_id").notNull(),
-  amount: integer("amount").notNull(),
-  status: text("status").notNull(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
+export const pendingTickets = pgTable('pendingTickets', {
+  id: integer('id').primaryKey().notNull(),
+  userId: integer('user_id').references(() => users.id).notNull(),
+  emailSubject: text('email_subject'),
+  emailFrom: text('email_from'),
+  rawEmailData: text('raw_email_data'),
+  extractedData: jsonb('extracted_data'),
+  status: varchar('status', { length: 50 }).default('pending').notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
 });
 
-export const pendingTickets = pgTable("pending_tickets", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
-  emailSubject: text("email_subject").notNull(),
-  emailFrom: text("email_from").notNull(),
-  rawEmailData: jsonb("raw_email_data").notNull(),
-  extractedData: jsonb("extracted_data").notNull(),
-  status: text("status").notNull().default("pending"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
-
-export const insertUserSchema = createInsertSchema(users).omit({ uniqueEmail: true });
-export const insertTicketSchema = createInsertSchema(tickets).omit({ id: true, userId: true, createdAt: true });
-export const insertPaymentSchema = createInsertSchema(payments).omit({ id: true, createdAt: true });
-export const insertPendingTicketSchema = createInsertSchema(pendingTickets).omit({ id: true, status: true, createdAt: true });
-
-export type User = typeof users.$inferSelect & { isAdmin: boolean };
-export type InsertUser = z.infer<typeof insertUserSchema>;
+// Type definitions
+export type User = typeof users.$inferSelect;
+export type InsertUser = typeof users.$inferInsert;
 export type Ticket = typeof tickets.$inferSelect;
-export type InsertTicket = z.infer<typeof insertTicketSchema>;
-export type Payment = typeof payments.$inferSelect;
-export type InsertPayment = z.infer<typeof insertPaymentSchema>;
+export type InsertTicket = typeof tickets.$inferInsert;
 export type PendingTicket = typeof pendingTickets.$inferSelect;
-export type InsertPendingTicket = z.infer<typeof insertPendingTicketSchema>;
+export type InsertPendingTicket = typeof pendingTickets.$inferInsert;
