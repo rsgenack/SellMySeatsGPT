@@ -7,11 +7,26 @@ import { eq } from 'drizzle-orm';
 import { db } from './db';
 import { users } from '@shared/schema';
 import { EmailService } from "./services/email-service";
-import { config } from 'dotenv';
-import { requireAdmin } from "./middleware/admin";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
+
+  // Initialize email monitoring service on server start
+  try {
+    console.log('Initializing email monitoring service...');
+    const emailService = EmailService.getInstance({
+      user: process.env.EMAIL_IMAP_USER!,
+      password: process.env.EMAIL_IMAP_PASSWORD!,
+      host: process.env.EMAIL_IMAP_HOST!,
+      port: parseInt(process.env.EMAIL_IMAP_PORT!),
+      tls: true
+    });
+
+    await emailService.startMonitoring();
+    console.log('Email monitoring service started successfully');
+  } catch (error) {
+    console.error("Failed to start email monitoring service:", error);
+  }
 
   // Admin-only email configuration endpoints
   app.post("/api/admin/email-setup", requireAdmin, async (req, res) => {
@@ -27,7 +42,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tls: true
       });
 
-      // Test the connection first
       const emailService = EmailService.getInstance({
         user: req.body.user,
         password: req.body.password,
@@ -62,19 +76,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/admin/email/status", requireAdmin, async (req, res) => {
     try {
-      if (!process.env.EMAIL_IMAP_USER || !process.env.EMAIL_IMAP_PASSWORD || 
-          !process.env.EMAIL_IMAP_HOST || !process.env.EMAIL_IMAP_PORT) {
-        return res.status(400).json({ error: "Email configuration not found. Please configure email settings first." });
-      }
-
-      const emailService = EmailService.getInstance({
-        user: process.env.EMAIL_IMAP_USER,
-        password: process.env.EMAIL_IMAP_PASSWORD,
-        host: process.env.EMAIL_IMAP_HOST,
-        port: parseInt(process.env.EMAIL_IMAP_PORT),
-        tls: true
-      });
-
+      const emailService = EmailService.getInstance();
       const status = emailService.getStatus();
       res.json(status);
     } catch (error) {
@@ -85,83 +87,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
-
-  app.post("/api/admin/email/start-monitoring", requireAdmin, async (req, res) => {
-    try {
-      if (!process.env.EMAIL_IMAP_USER || !process.env.EMAIL_IMAP_PASSWORD || 
-          !process.env.EMAIL_IMAP_HOST || !process.env.EMAIL_IMAP_PORT) {
-        return res.status(400).json({ error: "Email configuration not found. Please configure email settings first." });
-      }
-
-      const emailService = EmailService.getInstance({
-        user: process.env.EMAIL_IMAP_USER,
-        password: process.env.EMAIL_IMAP_PASSWORD,
-        host: process.env.EMAIL_IMAP_HOST,
-        port: parseInt(process.env.EMAIL_IMAP_PORT),
-        tls: true
-      });
-
-      await emailService.startMonitoring();
-      const status = emailService.getStatus();
-      res.json({ 
-        message: "Email monitoring started successfully",
-        status: status
-      });
-    } catch (error) {
-      console.error("Error starting email monitoring:", error);
-      res.status(500).json({ 
-        error: "Failed to start email monitoring",
-        details: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  });
-
-  app.post("/api/admin/email/stop-monitoring", requireAdmin, async (req, res) => {
-    try {
-      const emailService = EmailService.getInstance();
-      await emailService.stopMonitoring();
-      const status = emailService.getStatus();
-      res.json({ 
-        message: "Email monitoring stopped successfully",
-        status: status
-      });
-    } catch (error) {
-      console.error("Error stopping email monitoring:", error);
-      res.status(500).json({ 
-        error: "Failed to stop email monitoring",
-        details: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  });
-
-  //New endpoint replacing old one.
-  app.post("/api/email/start-monitoring", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-
-    try {
-      const emailService = EmailService.getInstance({
-        user: process.env.EMAIL_IMAP_USER!,
-        password: process.env.EMAIL_IMAP_PASSWORD!,
-        host: process.env.EMAIL_IMAP_HOST!,
-        port: parseInt(process.env.EMAIL_IMAP_PORT!),
-        tls: true
-      });
-
-      await emailService.startMonitoring();
-      const status = emailService.getStatus();
-      res.json({ 
-        message: "Email monitoring started successfully",
-        status: status
-      });
-    } catch (error) {
-      console.error("Error starting email monitoring:", error);
-      res.status(500).json({ 
-        error: "Failed to start email monitoring",
-        details: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  });
-
 
   // Tickets
   app.get("/api/tickets", async (req, res) => {
@@ -248,7 +173,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         emailFrom: emailData.from,
         rawEmailData: emailData,
         extractedData: {
-          // Initial parsing of the email data to extract ticket information
           eventName: emailData.subject.split(" - ")[0],
           eventDate: emailData.parsed?.date || "",
           venue: emailData.parsed?.venue || "",
