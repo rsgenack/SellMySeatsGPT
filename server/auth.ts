@@ -55,11 +55,7 @@ export function setupAuth(app: Express) {
         if (!user || !(await comparePasswords(password, user.password))) {
           return done(null, false);
         }
-        const userWithAdmin = {
-          ...user,
-          isAdmin: username === 'admin'
-        };
-        return done(null, userWithAdmin);
+        return done(null, user); 
       } catch (error) {
         return done(error);
       }
@@ -73,11 +69,7 @@ export function setupAuth(app: Express) {
       if (!user) {
         return done(null, false);
       }
-      const userWithAdmin = {
-        ...user,
-        isAdmin: user.username === 'admin'
-      };
-      done(null, userWithAdmin);
+      done(null, user); 
     } catch (err) {
       done(err);
     }
@@ -100,14 +92,9 @@ export function setupAuth(app: Express) {
         uniqueEmail
       });
 
-      const userWithAdmin = {
-        ...user,
-        isAdmin: user.username === 'admin'
-      };
-
-      req.login(userWithAdmin, (err) => {
+      req.login(user, (err) => {
         if (err) return next(err);
-        res.status(201).json(userWithAdmin);
+        res.status(201).json(user);
       });
     } catch (error) {
       console.error('Registration error:', error);
