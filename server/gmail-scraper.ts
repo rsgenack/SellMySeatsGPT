@@ -150,6 +150,7 @@ export class GmailScraper {
 
   async scrapeTickets() {
     try {
+      console.log('Starting to scrape tickets from Gmail...');
       const response = await this.gmail.users.messages.list({
         userId: 'me',
         q: 'from:customer_support@email.ticketmaster.com is:unread'
@@ -160,6 +161,7 @@ export class GmailScraper {
 
       for (const message of messages) {
         try {
+          console.log(`Processing message ID: ${message.id}`);
           const email = await this.gmail.users.messages.get({
             userId: 'me',
             id: message.id,
@@ -171,6 +173,12 @@ export class GmailScraper {
           const toAddress = headers.find((h: any) => h.name === 'To')?.value;
           const fromAddress = headers.find((h: any) => h.name === 'From')?.value;
           const subject = headers.find((h: any) => h.name === 'Subject')?.value;
+
+          console.log('Processing email:', {
+            to: toAddress,
+            from: fromAddress,
+            subject: subject
+          });
 
           if (!toAddress?.endsWith('@seatxfer.com')) {
             console.log('Skipping non-seatxfer email:', toAddress);
@@ -184,9 +192,11 @@ export class GmailScraper {
             .where(eq(users.uniqueEmail, toAddress));
 
           if (!user) {
-            console.log('No user found for email:', toAddress);
+            console.log(`No user found for email: ${toAddress}`);
             continue;
           }
+
+          console.log(`Found user for email ${toAddress}:`, user.username);
 
           // Extract HTML content
           let emailHtml = '';
@@ -199,33 +209,39 @@ export class GmailScraper {
             }
           }
 
+          console.log('Extracted HTML content length:', emailHtml.length);
+
           // Parse tickets from email
           const tickets = this.parseTicketmasterEmail(emailHtml, toAddress);
-          console.log(`Extracted ${tickets.length} tickets from email`);
+          console.log(`Extracted ${tickets.length} tickets from email:`, tickets);
 
           // Store each ticket
           for (const ticket of tickets) {
-            const pendingTicket: InsertPendingTicket = {
-              userId: user.id,
-              recipientEmail: toAddress,
-              eventName: ticket.eventName || '',
-              eventDate: ticket.eventDate || new Date(),
-              eventTime: ticket.eventTime || '',
-              venue: ticket.venue || '',
-              city: ticket.city || '',
-              state: ticket.state || '',
-              section: ticket.section || '',
-              row: ticket.row || '',
-              seat: ticket.seat || '',
-              emailSubject: subject || '',
-              emailFrom: fromAddress || '',
-              rawEmailData: emailHtml,
-              extractedData: ticket,
-              status: 'pending'
-            };
+            try {
+              const pendingTicket: InsertPendingTicket = {
+                userId: user.id,
+                recipientEmail: toAddress,
+                eventName: ticket.eventName || '',
+                eventDate: ticket.eventDate || new Date(),
+                eventTime: ticket.eventTime || '',
+                venue: ticket.venue || '',
+                city: ticket.city || '',
+                state: ticket.state || '',
+                section: ticket.section || '',
+                row: ticket.row || '',
+                seat: ticket.seat || '',
+                emailSubject: subject || '',
+                emailFrom: fromAddress || '',
+                rawEmailData: emailHtml,
+                extractedData: ticket,
+                status: 'pending'
+              };
 
-            await db.insert(pendingTickets).values(pendingTicket);
-            console.log('Created pending ticket for user:', user.username);
+              await db.insert(pendingTickets).values(pendingTicket);
+              console.log('Successfully created pending ticket for user:', user.username);
+            } catch (error) {
+              console.error('Error inserting pending ticket:', error);
+            }
           }
 
           // Mark email as read
@@ -235,6 +251,7 @@ export class GmailScraper {
             requestBody: { removeLabelIds: ['UNREAD'] }
           });
 
+          console.log('Marked email as read:', message.id);
         } catch (error) {
           console.error('Error processing individual email:', error);
         }
