@@ -54,10 +54,9 @@ export function setupAuth(app: Express) {
       if (!user || !(await comparePasswords(password, user.password))) {
         return done(null, false);
       } else {
-        // Add isAdmin flag based on username (for testing)
         const userWithAdmin = {
           ...user,
-          isAdmin: username === 'admin' // Only 'admin' user has admin privileges
+          isAdmin: username === 'admin'
         };
         return done(null, userWithAdmin);
       }
@@ -71,7 +70,6 @@ export function setupAuth(app: Express) {
       if (!user) {
         return done(null, false);
       }
-      // Add isAdmin flag during deserialization
       const userWithAdmin = {
         ...user,
         isAdmin: user.username === 'admin'
@@ -83,7 +81,7 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/register", async (req, res, next) => {
-    const { username, password } = req.body;
+    const { username, password, email } = req.body;
 
     try {
       const existingUser = await storage.getUserByUsername(username);
@@ -95,10 +93,10 @@ export function setupAuth(app: Express) {
       const user = await storage.createUser({
         username,
         password: await hashPassword(password),
+        email: email || uniqueEmail, // Use provided email or generated one
         uniqueEmail
       });
 
-      // Add isAdmin flag for the newly registered user
       const userWithAdmin = {
         ...user,
         isAdmin: user.username === 'admin'
