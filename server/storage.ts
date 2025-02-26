@@ -108,14 +108,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createPendingTicket(pendingTicket: InsertPendingTicket): Promise<PendingTicket> {
-    const [newPendingTicket] = await db
-      .insert(pendingTickets)
-      .values({
-        ...pendingTicket,
-        status: "pending",
-      })
-      .returning();
-    return newPendingTicket;
+    console.log('Creating pending ticket:', pendingTicket);
+    try {
+      const [newPendingTicket] = await db
+        .insert(pendingTickets)
+        .values({
+          ...pendingTicket,
+          status: "pending",
+          createdAt: new Date(),
+        })
+        .returning();
+
+      console.log('Successfully created pending ticket:', newPendingTicket);
+      return newPendingTicket;
+    } catch (error) {
+      console.error('Error creating pending ticket:', error);
+      throw error;
+    }
   }
 
   async confirmPendingTicket(pendingTicketId: number): Promise<Ticket> {

@@ -137,8 +137,6 @@ export class EmailService {
             return;
           }
 
-          console.log('Successfully opened INBOX');
-
           try {
             const results = await this.promisifyImapSearch(['ALL']);
             console.log(`Found ${results.length} total emails in inbox`);
@@ -154,6 +152,7 @@ export class EmailService {
 
                 // Only process emails from @seatxfer.com
                 if (!fromAddress.includes('@seatxfer.com')) {
+                  console.log('Skipping non-seatxfer email:', fromAddress);
                   continue;
                 }
 
@@ -172,16 +171,26 @@ export class EmailService {
                   console.log('Found matching user:', user.username);
 
                   const ticketInfo = await this.extractTicketInfo(email);
-                  await storage.createPendingTicket({
+                  console.log('Creating pending ticket with info:', {
                     userId: user.id,
-                    emailSubject: email.subject || '',
-                    emailFrom: fromAddress,
-                    rawEmailData: JSON.stringify(email),
-                    extractedData: ticketInfo,
-                    status: 'pending'
+                    emailSubject: email.subject,
+                    ticketInfo
                   });
 
-                  console.log('Successfully processed ticket for user:', user.username);
+                  try {
+                    await storage.createPendingTicket({
+                      userId: user.id,
+                      emailSubject: email.subject || '',
+                      emailFrom: fromAddress,
+                      rawEmailData: JSON.stringify(email),
+                      extractedData: ticketInfo,
+                      status: 'pending'
+                    });
+                    console.log('Successfully created pending ticket for user:', user.username);
+                  } catch (error) {
+                    console.error('Failed to create pending ticket:', error);
+                    throw error;
+                  }
                 } else {
                   console.log('No matching user found for email address:', toAddress);
                 }
@@ -191,6 +200,7 @@ export class EmailService {
             }
             resolve();
           } catch (error) {
+            console.error('Error during email processing:', error);
             reject(error);
           }
         });
@@ -238,7 +248,6 @@ export class EmailService {
       const emailText = email.text || '';
       const emailHtml = email.html || '';
 
-      // Try to extract from text content first
       const patterns = {
         eventName: [/Event:\s*([^\n]+)/i, /Event Name:\s*([^\n]+)/i],
         eventDate: [/Date:\s*([^\n]+)/i, /Event Date:\s*([^\n]+)/i],
