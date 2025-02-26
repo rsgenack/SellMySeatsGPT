@@ -1,5 +1,7 @@
-
-import { pgTable, varchar, text, timestamp, serial, boolean, jsonb, integer } from 'drizzle-orm/pg-core';
+// shared/schema.ts
+import { pgTable, varchar, text, timestamp, serial, integer, boolean, jsonb } from 'drizzle-orm/pg-core';
+import { createInsertSchema } from 'drizzle-zod';
+import { z } from 'zod';
 
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
@@ -21,7 +23,7 @@ export const pendingTickets = pgTable('pendingTickets', {
   emailFrom: text('email_from'),
   rawEmailData: text('raw_email_data'),
   extractedData: jsonb('extracted_data'),
-  status: varchar('status', { length: 50 }).default('pending').notNull(),
+  status: text('status').default('pending').notNull(),
   createdAt: timestamp('created_at').defaultNow(),
 });
 
@@ -41,7 +43,7 @@ export const tickets = pgTable('tickets', {
   row: text('row'),
   seat: text('seat'),
   askingPrice: integer('asking_price').default(0),
-  status: varchar('status', { length: 50 }).default('pending').notNull(),
+  status: text('status').default('pending').notNull(),
   createdAt: timestamp('created_at').defaultNow(),
 });
 
@@ -52,6 +54,26 @@ export const payments = pgTable('payments', {
   createdAt: timestamp('created_at').defaultNow(),
 });
 
+// Create Zod schemas for validation
+export const insertUserSchema = createInsertSchema(users, {
+  uniqueEmail: z.string().email("Invalid email format"),
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+export const insertTicketSchema = createInsertSchema(tickets).extend({
+  eventName: z.string().min(1, "Event name is required"),
+  eventDate: z.string().or(z.date()),
+  venue: z.string().optional(),
+  section: z.string().optional(),
+  row: z.string().optional(),
+  seat: z.string().optional(),
+  askingPrice: z.number().default(0),
+});
+
+export const insertPaymentSchema = createInsertSchema(payments);
+
+// Type definitions
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type PendingTicket = typeof pendingTickets.$inferSelect;

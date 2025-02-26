@@ -9,6 +9,9 @@ import { users } from '@shared/schema';
 import { EmailService } from "./services/email-service";
 import { config } from 'dotenv';
 import { requireAdmin } from "./middleware/admin";
+import { GmailScraper } from './gmail-scraper';
+
+config(); // Initialize dotenv
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
@@ -27,7 +30,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tls: true
       });
 
-      // Test the connection first
+      // Initialize email service
       const emailService = EmailService.getInstance({
         user: req.body.user,
         password: req.body.password,
@@ -36,20 +39,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tls: true
       });
 
-      const isConnected = await emailService.checkEmailConnection();
-      if (!isConnected) {
-        throw new Error("Failed to connect to email server");
-      }
-
-      // Store email configuration in environment variables
-      process.env.EMAIL_IMAP_USER = req.body.user;
-      process.env.EMAIL_IMAP_PASSWORD = req.body.password;
-      process.env.EMAIL_IMAP_HOST = req.body.host;
-      process.env.EMAIL_IMAP_PORT = req.body.port.toString();
+      // Test connection and start monitoring
+      await emailService.startMonitoring();
+      const status = emailService.getStatus();
 
       res.json({ 
-        message: "Email configuration saved and tested successfully",
-        status: emailService.getStatus()
+        message: "Email configuration saved and monitoring started",
+        status: status
       });
     } catch (error) {
       console.error("Email setup error:", error);
@@ -60,108 +56,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/admin/email/status", requireAdmin, async (req, res) => {
-    try {
-      if (!process.env.EMAIL_IMAP_USER || !process.env.EMAIL_IMAP_PASSWORD || 
-          !process.env.EMAIL_IMAP_HOST || !process.env.EMAIL_IMAP_PORT) {
-        return res.status(400).json({ error: "Email configuration not found. Please configure email settings first." });
-      }
-
-      const emailService = EmailService.getInstance({
-        user: process.env.EMAIL_IMAP_USER,
-        password: process.env.EMAIL_IMAP_PASSWORD,
-        host: process.env.EMAIL_IMAP_HOST,
-        port: parseInt(process.env.EMAIL_IMAP_PORT),
-        tls: true
-      });
-
-      const status = emailService.getStatus();
-      res.json(status);
-    } catch (error) {
-      console.error("Error getting email status:", error);
-      res.status(500).json({ 
-        error: "Failed to get email status",
-        details: error instanceof Error ? error.message : 'Unknown error'
-      });
+  // Gmail authentication routes
+  app.get("/api/gmail/auth", requireAdmin, async (req, res) => {
+    const scraper = new GmailScraper();
+    const isAuthenticated = await scraper.authenticate();
+    if (isAuthenticated) {
+      res.json({ status: 'already_authenticated' });
+    } else {
+      res.json({ status: 'needs_authentication' });
     }
   });
 
-  app.post("/api/admin/email/start-monitoring", requireAdmin, async (req, res) => {
-    try {
-      if (!process.env.EMAIL_IMAP_USER || !process.env.EMAIL_IMAP_PASSWORD || 
-          !process.env.EMAIL_IMAP_HOST || !process.env.EMAIL_IMAP_PORT) {
-        return res.status(400).json({ error: "Email configuration not found. Please configure email settings first." });
-      }
+  app.get("/api/gmail/callback", requireAdmin, async (req, res) => {
+    const { code } = req.query;
+    if (!code || typeof code !== 'string') {
+      return res.status(400).json({ error: 'Authorization code required' });
+    }
 
-      const emailService = EmailService.getInstance({
-        user: process.env.EMAIL_IMAP_USER,
-        password: process.env.EMAIL_IMAP_PASSWORD,
-        host: process.env.EMAIL_IMAP_HOST,
-        port: parseInt(process.env.EMAIL_IMAP_PORT),
-        tls: true
-      });
+    const scraper = new GmailScraper();
+    const success = await scraper.handleAuthCallback(code);
 
-      await emailService.startMonitoring();
-      const status = emailService.getStatus();
-      res.json({ 
-        message: "Email monitoring started successfully",
-        status: status
-      });
-    } catch (error) {
-      console.error("Error starting email monitoring:", error);
-      res.status(500).json({ 
-        error: "Failed to start email monitoring",
-        details: error instanceof Error ? error.message : 'Unknown error'
-      });
+    if (success) {
+      res.json({ status: 'authenticated' });
+      // Start monitoring after successful authentication
+      scraper.startMonitoring();
+    } else {
+      res.status(500).json({ error: 'Failed to authenticate with Gmail' });
     }
   });
-
-  app.post("/api/admin/email/stop-monitoring", requireAdmin, async (req, res) => {
-    try {
-      const emailService = EmailService.getInstance();
-      await emailService.stopMonitoring();
-      const status = emailService.getStatus();
-      res.json({ 
-        message: "Email monitoring stopped successfully",
-        status: status
-      });
-    } catch (error) {
-      console.error("Error stopping email monitoring:", error);
-      res.status(500).json({ 
-        error: "Failed to stop email monitoring",
-        details: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  });
-
-  //New endpoint replacing old one.
-  app.post("/api/email/start-monitoring", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-
-    try {
-      const emailService = EmailService.getInstance({
-        user: process.env.EMAIL_IMAP_USER!,
-        password: process.env.EMAIL_IMAP_PASSWORD!,
-        host: process.env.EMAIL_IMAP_HOST!,
-        port: parseInt(process.env.EMAIL_IMAP_PORT!),
-        tls: true
-      });
-
-      await emailService.startMonitoring();
-      const status = emailService.getStatus();
-      res.json({ 
-        message: "Email monitoring started successfully",
-        status: status
-      });
-    } catch (error) {
-      console.error("Error starting email monitoring:", error);
-      res.status(500).json({ 
-        error: "Failed to start email monitoring",
-        details: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  });
-
 
   // Tickets
   app.get("/api/tickets", async (req, res) => {
@@ -189,7 +111,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       console.log(`[Routes] Creating new ticket for user ${req.user.id}:`, req.body);
-      const validated = insertTicketSchema.parse(req.body);
+      const validated = insertTicketSchema.parse({
+        ...req.body,
+        eventDate: new Date(req.body.eventDate)
+      });
       const ticket = await storage.createTicket(req.user.id, validated);
       console.log('[Routes] Successfully created ticket:', ticket);
       res.status(201).json(ticket);

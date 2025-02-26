@@ -5,7 +5,7 @@ import { db } from '../db';
 import { users } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 
-export interface EmailStatus {
+type EmailStatus = {
   isConnected: boolean;
   lastChecked: Date | null;
   isMonitoring: boolean;
@@ -15,7 +15,16 @@ export interface EmailStatus {
     date: Date;
     status: 'processed' | 'pending' | 'error';
   }[];
-}
+};
+
+type TicketInfo = {
+  eventName: string;
+  eventDate: string;
+  venue: string;
+  section: string;
+  row: string;
+  seat: string;
+};
 
 export class EmailService {
   private imap: Imap;
@@ -56,15 +65,9 @@ export class EmailService {
     port: number;
     tls: boolean;
   }) {
-    const password = credentials.password.replace(/\s+/g, '');
-
     this.imap = new Imap({
       ...credentials,
-      password,
-      tlsOptions: {
-        rejectUnauthorized: false,
-        servername: credentials.host
-      },
+      tlsOptions: { rejectUnauthorized: false },
       authTimeout: 10000,
       keepalive: false
     });
@@ -126,7 +129,7 @@ export class EmailService {
       await this.promisifyImapOpen();
       this.status.lastChecked = new Date();
 
-      await new Promise((resolve, reject) => {
+      await new Promise<void>((resolve, reject) => {
         this.imap.openBox('INBOX', false, async (err, box) => {
           if (err) {
             console.error('Error opening inbox:', err);
@@ -134,17 +137,13 @@ export class EmailService {
             return;
           }
 
-          console.log('Successfully opened INBOX, box info:', box);
+          console.log('Successfully opened INBOX');
 
           try {
-            console.log('Searching for all emails in inbox...');
             const results = await this.promisifyImapSearch(['ALL']);
-
             console.log(`Found ${results.length} total emails in inbox`);
-            this.status.recentEmails = [];
 
-            // Process emails from newest to oldest
-            const emailsToProcess = results.reverse().slice(0, 20); // Process last 20 emails
+            const emailsToProcess = results.reverse().slice(0, 20);
             console.log(`Processing ${emailsToProcess.length} most recent emails`);
 
             for (const messageId of emailsToProcess) {
@@ -153,67 +152,45 @@ export class EmailService {
                 const toAddress = (email.to as AddressObject)?.text || '';
                 const fromAddress = (email.from as AddressObject)?.text || '';
 
+                // Only process emails from @seatxfer.com
+                if (!fromAddress.includes('@seatxfer.com')) {
+                  continue;
+                }
+
                 console.log('Processing email:', {
-                  messageId,
                   subject: email.subject,
                   from: fromAddress,
                   to: toAddress,
-                  date: email.date
                 });
 
-                const emailInfo = {
-                  subject: email.subject || '',
-                  from: fromAddress,
-                  date: email.date || new Date(),
-                  status: 'pending' as const
-                };
-
-                // Extract ticket information
-                const ticketInfo = await this.extractTicketInfo(email);
-                console.log('Extracted ticket info:', ticketInfo);
-
-                // Check if the email is addressed to a unique email in our system
                 const [user] = await db
                   .select()
                   .from(users)
                   .where(eq(users.uniqueEmail, toAddress));
 
                 if (user) {
-                  console.log('Found matching user for email:', {
-                    username: user.username,
-                    uniqueEmail: user.uniqueEmail,
-                    emailTo: toAddress
-                  });
+                  console.log('Found matching user:', user.username);
 
+                  const ticketInfo = await this.extractTicketInfo(email);
                   await storage.createPendingTicket({
                     userId: user.id,
                     emailSubject: email.subject || '',
                     emailFrom: fromAddress,
-                    rawEmailData: email,
+                    rawEmailData: JSON.stringify(email),
                     extractedData: ticketInfo,
+                    status: 'pending'
                   });
 
-                  emailInfo.status = 'processed' as const;
-                  console.log('Successfully processed email and created pending ticket');
+                  console.log('Successfully processed ticket for user:', user.username);
                 } else {
                   console.log('No matching user found for email address:', toAddress);
-                  emailInfo.status = 'error' as const;
                 }
-
-                this.status.recentEmails.push(emailInfo);
               } catch (error) {
                 console.error('Error processing individual email:', error);
-                this.status.recentEmails.push({
-                  subject: 'Error processing email',
-                  from: 'unknown',
-                  date: new Date(),
-                  status: 'error' as const
-                });
               }
             }
-            resolve(true);
+            resolve();
           } catch (error) {
-            console.error('Error during email search:', error);
             reject(error);
           }
         });
@@ -226,83 +203,6 @@ export class EmailService {
         this.imap.end();
       }
     }
-  }
-
-  private async extractTicketInfo(email: ParsedMail) {
-    const info = {
-      eventName: '',
-      eventDate: '',
-      venue: '',
-      section: '',
-      row: '',
-      seat: '',
-    };
-
-    try {
-      // Strategy 1: Look for structured patterns in email body
-      const patterns = {
-        eventName: [/Event:\s*([^\n]+)/i, /Event Name:\s*([^\n]+)/i],
-        eventDate: [/Date:\s*([^\n]+)/i, /Event Date:\s*([^\n]+)/i, /When:\s*([^\n]+)/i],
-        venue: [/Venue:\s*([^\n]+)/i, /Location:\s*([^\n]+)/i, /Where:\s*([^\n]+)/i],
-        section: [/Section:\s*([^\n]+)/i, /Sect(?:ion)?\.?\s*([^\n]+)/i],
-        row: [/Row:\s*([^\n]+)/i, /Row\.?\s*([^\n]+)/i],
-        seat: [/Seat(?:s)?:\s*([^\n]+)/i, /Seat\.?\s*([^\n]+)/i],
-      };
-
-      const emailText = email.text || '';
-      const emailHtml = email.html || '';
-
-      // Try each pattern for each field
-      for (const [field, fieldPatterns] of Object.entries(patterns)) {
-        for (const pattern of fieldPatterns) {
-          const match = emailText.match(pattern) || emailHtml.match(pattern);
-          if (match && match[1]) {
-            info[field as keyof typeof info] = match[1].trim();
-            break;
-          }
-        }
-      }
-
-      // Strategy 2: Parse subject line for event name
-      if (!info.eventName && email.subject) {
-        const subjectParts = email.subject.split(' - ');
-        if (subjectParts.length > 0) {
-          info.eventName = info.eventName || subjectParts[0].trim();
-        }
-      }
-
-      // Strategy 3: Look for date patterns in the text
-      if (!info.eventDate) {
-        const datePatterns = [
-          /\d{1,2}\/\d{1,2}\/\d{2,4}/,
-          /\d{4}-\d{2}-\d{2}/,
-          /(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* \d{1,2},? \d{4}/i
-        ];
-
-        for (const pattern of datePatterns) {
-          const match = emailText.match(pattern);
-          if (match) {
-            info.eventDate = match[0];
-            break;
-          }
-        }
-      }
-
-      console.log('Extracted ticket information:', info);
-      return info;
-    } catch (error) {
-      console.error('Error extracting ticket information:', error);
-      return info;
-    }
-  }
-
-  private promisifyImapSearch(criteria: any[]): Promise<number[]> {
-    return new Promise((resolve, reject) => {
-      this.imap.search(criteria, (err: Error | null, results: number[]) => {
-        if (err) reject(err);
-        else resolve(results);
-      });
-    });
   }
 
   private async fetchEmail(messageId: number): Promise<ParsedMail> {
@@ -324,15 +224,65 @@ export class EmailService {
     });
   }
 
-  private async promisifyImapOpen(): Promise<boolean> {
+  private async extractTicketInfo(email: ParsedMail): Promise<TicketInfo> {
+    const info: TicketInfo = {
+      eventName: '',
+      eventDate: '',
+      venue: '',
+      section: '',
+      row: '',
+      seat: '',
+    };
+
+    try {
+      const emailText = email.text || '';
+      const emailHtml = email.html || '';
+
+      // Try to extract from text content first
+      const patterns = {
+        eventName: [/Event:\s*([^\n]+)/i, /Event Name:\s*([^\n]+)/i],
+        eventDate: [/Date:\s*([^\n]+)/i, /Event Date:\s*([^\n]+)/i],
+        venue: [/Venue:\s*([^\n]+)/i, /Location:\s*([^\n]+)/i],
+        section: [/Section:\s*([^\n]+)/i, /Sect(?:ion)?\.?\s*([^\n]+)/i],
+        row: [/Row:\s*([^\n]+)/i, /Row\.?\s*([^\n]+)/i],
+        seat: [/Seat(?:s)?:\s*([^\n]+)/i, /Seat\.?\s*([^\n]+)/i],
+      };
+
+      for (const [field, fieldPatterns] of Object.entries(patterns)) {
+        for (const pattern of fieldPatterns) {
+          const match = emailText.match(pattern) || emailHtml.match(pattern);
+          if (match && match[1]) {
+            info[field as keyof TicketInfo] = match[1].trim();
+            break;
+          }
+        }
+      }
+
+      // Fallback to subject line for event name if not found
+      if (!info.eventName && email.subject) {
+        const subjectParts = email.subject.split(' - ');
+        if (subjectParts.length > 0) {
+          info.eventName = subjectParts[0].trim();
+        }
+      }
+
+      console.log('Extracted ticket information:', info);
+      return info;
+    } catch (error) {
+      console.error('Error extracting ticket information:', error);
+      return info;
+    }
+  }
+
+  private async promisifyImapOpen(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.imap.once('ready', () => {
         console.log('IMAP connection established');
         this.status.isConnected = true;
-        resolve(true);
+        resolve();
       });
 
-      this.imap.once('error', (err) => {
+      this.imap.once('error', (err: Error) => {
         this.status.isConnected = false;
         reject(err);
       });
@@ -342,6 +292,14 @@ export class EmailService {
       } catch (err) {
         reject(err);
       }
+    });
+  }
+  private promisifyImapSearch(criteria: any[]): Promise<number[]> {
+    return new Promise((resolve, reject) => {
+      this.imap.search(criteria, (err: Error | null, results: number[]) => {
+        if (err) reject(err);
+        else resolve(results);
+      });
     });
   }
 }

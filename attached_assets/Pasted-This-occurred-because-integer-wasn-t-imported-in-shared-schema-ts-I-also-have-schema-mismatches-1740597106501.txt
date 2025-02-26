@@ -1,0 +1,77 @@
+This occurred because `integer` wasn’t imported in `shared/schema.ts`. I also have schema mismatches (e.g., `serial` vs. `integer` for `id`, `text` vs. `varchar` for columns), unique constraint prompts for `username` and `uniqueEmail`, and data-loss warnings for `pending_tickets`, `session`, etc. I aborted the changes to avoid data loss.
+
+### Sensitive Information (Handle Securely in Replit)
+- **DATABASE_URL**: `postgres://[user]:[password]@[host]/[database]` (replace `[user]`, `[password]`, `[host]`, `[database]` with your Neon Serverless connection string, stored in Replit Secrets under `DATABASE_URL`).
+- **GOOGLE_CLIENT_ID**: `70293014822-22osm1pr707l0ebe5mbqe7oh4et4cjfq.apps.googleusercontent.com`
+- **GOOGLE_CLIENT_SECRET**: `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`
+- **GOOGLE_TOKEN**: Leave empty for now (you’ll obtain this during Gmail authorization).
+
+### Steps to Complete the Project
+Follow these steps in Replit and Neon, reporting back any errors or questions:
+
+#### Step 1: Fix and Update `shared/schema.ts` (2 Minutes)
+- Open `shared/schema.ts` and replace its contents with:
+```typescript
+// shared/schema.ts
+import { pgTable, varchar, text, timestamp, serial, integer, boolean, jsonb } from 'drizzle-orm/pg-core';
+
+export const users = pgTable('users', {
+  id: serial('id').primaryKey(), // Match serial ID
+  username: text('username').notNull().unique(), // Match text, keep unique
+  password: text('password').notNull(), // Match text
+  uniqueEmail: varchar('uniqueEmail', { length: 255 }).notNull().unique(), // New for @seatxfer.com
+  isAdmin: boolean('isAdmin').default(false), // New for admin status
+  createdAt: timestamp('created_at').defaultNow(), // New timestamp
+  email: text('email'), // Preserve for migration
+  unique_email: text('unique_email'), // Preserve for migration
+  email_credentials: text('email_credentials'), // Preserve for migration
+  is_admin: boolean('is_admin'), // Preserve for migration
+});
+
+export const pendingTickets = pgTable('pendingTickets', {
+  id: serial('id').primaryKey(), // Match serial ID
+  userId: integer('user_id').references(() => users.id).notNull(),
+  emailSubject: text('email_subject'),
+  emailFrom: text('email_from'),
+  rawEmailData: text('raw_email_data'),
+  extractedData: jsonb('extracted_data'),
+  status: text('status').default('pending').notNull(), // Match text type
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const session = pgTable('session', {
+  sid: varchar('sid', { length: 255 }).notNull().primaryKey(),
+  sess: jsonb('sess').notNull(),
+  expire: timestamp('expire').notNull(),
+});
+
+export const tickets = pgTable('tickets', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id).notNull(),
+  eventName: text('event_name'),
+  eventDate: timestamp('event_date'),
+  venue: text('venue'),
+  section: text('section'),
+  row: text('row'),
+  seat: text('seat'),
+  askingPrice: integer('asking_price').default(0),
+  status: text('status').default('pending').notNull(), // Match text type
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const payments = pgTable('payments', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id).notNull(),
+  amount: integer('amount').notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+// Type definitions
+export type User = typeof users.$inferSelect;
+export type InsertUser = typeof users.$inferInsert;
+export type PendingTicket = typeof pendingTickets.$inferSelect;
+export type InsertPendingTicket = typeof pendingTickets.$inferInsert;
+export type Ticket = typeof tickets.$inferSelect;
+export type InsertTicket = typeof tickets.$inferInsert;
+export type Payment = typeof payments.$inferSelect;
+export type InsertPayment = typeof payments.$inferInsert;
