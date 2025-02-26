@@ -11,10 +11,30 @@ import { config } from 'dotenv';
 import { requireAdmin } from "./middleware/admin";
 import { GmailScraper } from './gmail-scraper';
 
-config(); // Initialize dotenv
+config();
 
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
+
+  // Add user profile endpoint
+  app.get("/api/profile", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      console.log('[Routes] Unauthenticated request to /api/profile');
+      return res.sendStatus(401);
+    }
+
+    try {
+      const { password, ...userProfile } = req.user;
+      res.json({
+        ...userProfile,
+        ticketSubmissionEmail: userProfile.uniqueEmail,
+        isAdmin: userProfile.isAdmin
+      });
+    } catch (error) {
+      console.error('[Routes] Error getting user profile:', error);
+      res.status(500).json({ error: 'Failed to retrieve user profile' });
+    }
+  });
 
   // Admin-only email configuration endpoints
   app.post("/api/admin/email-setup", requireAdmin, async (req, res) => {
@@ -30,7 +50,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tls: true
       });
 
-      // Initialize email service
       const emailService = EmailService.getInstance({
         user: req.body.user,
         password: req.body.password,
@@ -39,7 +58,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tls: true
       });
 
-      // Test connection and start monitoring
       await emailService.startMonitoring();
       const status = emailService.getStatus();
 
@@ -55,6 +73,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
+  // Gmail scraper authorization status
+  app.get("/api/gmail/status", requireAdmin, async (req, res) => {
+    try {
+      const scraper = new GmailScraper();
+      const isAuthenticated = await scraper.authenticate();
+      res.json({
+        isAuthenticated,
+        message: isAuthenticated ? 
+          'Gmail scraper is authenticated and monitoring for ticket emails' : 
+          'Gmail authorization required. Please check server logs for the authorization URL.'
+      });
+    } catch (error) {
+      console.error("Gmail status check error:", error);
+      res.status(500).json({ error: "Failed to check Gmail status" });
+    }
+  });
+
 
   // Gmail authentication routes
   app.get("/api/gmail/auth", requireAdmin, async (req, res) => {

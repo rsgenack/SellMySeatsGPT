@@ -17,7 +17,7 @@ export default function DashboardPage() {
   const { user, logoutMutation } = useAuth();
   const { data: tickets = [] } = useQuery<Ticket[]>({ 
     queryKey: ["/api/tickets", user?.id],
-    enabled: !!user // Only fetch when user is logged in
+    enabled: !!user
   });
   const { data: payments = [] } = useQuery<Payment[]>({ 
     queryKey: ["/api/payments", user?.id],
@@ -85,7 +85,7 @@ export default function DashboardPage() {
               </Button>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">
-              Send your tickets to this email address. We'll process them and list them for sale.
+              Send your Ticketmaster ticket transfer emails to this address. We'll automatically process them and add them to your pending tickets.
             </p>
           </CardContent>
         </Card>
