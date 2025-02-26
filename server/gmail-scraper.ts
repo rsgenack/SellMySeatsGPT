@@ -3,8 +3,6 @@ import { OAuth2Client } from 'google-auth-library';
 import { db } from './db';
 import { users, pendingTickets, type InsertPendingTicket } from '@shared/schema';
 import { eq } from 'drizzle-orm';
-import path from 'path';
-import fs from 'fs/promises';
 
 const SCOPES = ['https://www.googleapis.com/auth/gmail.readonly'];
 
@@ -40,87 +38,141 @@ export class GmailScraper {
     }
   }
 
-  async handleAuthCallback(code: string): Promise<boolean> {
-    try {
-      const { tokens } = await this.oauth2Client.getToken(code);
-      this.oauth2Client.setCredentials(tokens);
-      process.env.GOOGLE_TOKEN = JSON.stringify(tokens);
-      this.gmail = google.gmail({ version: 'v1', auth: this.oauth2Client });
-      return true;
-    } catch (error) {
-      console.error('Error handling auth callback:', error);
-      return false;
+  private parseTicketmasterEmail(html: string, recipientEmail: string): Partial<InsertPendingTicket>[] {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const tickets: Partial<InsertPendingTicket>[] = [];
+
+    // Extract event name (first p tag after h1)
+    const eventName = Array.from(doc.querySelectorAll('p'))
+      .find(p => !p.textContent?.toLowerCase().includes('transfer'))
+      ?.textContent?.trim() || 'Unknown Event';
+
+    // Extract date and time
+    const dateTimeText = Array.from(doc.querySelectorAll('p'))
+      .find(p => p.textContent?.includes('@'))
+      ?.textContent?.trim() || '';
+
+    let eventDate = null;
+    let eventTime = '';
+    if (dateTimeText) {
+      const [datePart, timePart] = dateTimeText.split('@').map(part => part.trim());
+      const dateStr = datePart.split(', ')[1];
+      eventTime = timePart;
+      // Assume 2025 for all dates as specified
+      eventDate = new Date(`${dateStr}, 2025 ${timePart}`);
     }
-  }
 
-  private extractTicketInfo(body: string): {
-    eventName: string;
-    eventDate: string;
-    venue: string;
-    section: string;
-    row: string;
-    seat: string;
-  } {
-    const info = {
-      eventName: '',
-      eventDate: '',
-      venue: '',
-      section: '',
-      row: '',
-      seat: '',
-    };
+    // Extract venue, city, and state
+    const locationText = Array.from(doc.querySelectorAll('p'))
+      .find(p => p.textContent?.includes(','))
+      ?.textContent?.trim() || '';
 
-    // Use regex patterns to extract ticket information
-    const patterns = {
-      eventName: [/Event:\s*([^\n]+)/i, /Event Name:\s*([^\n]+)/i],
-      eventDate: [/Date:\s*([^\n]+)/i, /Event Date:\s*([^\n]+)/i],
-      venue: [/Venue:\s*([^\n]+)/i, /Location:\s*([^\n]+)/i],
-      section: [/Section:\s*([^\n]+)/i, /Sect(?:ion)?\.?\s*([^\n]+)/i],
-      row: [/Row:\s*([^\n]+)/i, /Row\.?\s*([^\n]+)/i],
-      seat: [/Seat(?:s)?:\s*([^\n]+)/i, /Seat\.?\s*([^\n]+)/i],
-    };
+    let [venue, city, state] = ['', '', ''];
+    if (locationText) {
+      const parts = locationText.split(',').map(part => part.trim());
+      if (parts.length >= 3) {
+        [venue, city, state] = parts;
+      } else if (parts.length === 2) {
+        // Handle Toronto case
+        venue = parts[0];
+        city = parts[0];
+        state = parts[1];
+      }
+    }
 
-    for (const [field, fieldPatterns] of Object.entries(patterns)) {
-      for (const pattern of fieldPatterns) {
-        const match = body.match(pattern);
-        if (match && match[1]) {
-          info[field as keyof typeof info] = match[1].trim();
-          break;
+    // Extract seating information
+    const seatingInfos = Array.from(doc.querySelectorAll('p'))
+      .filter(p => p.textContent?.includes('Section') || p.textContent?.toUpperCase().includes('GENERAL ADMISSION'));
+
+    if (seatingInfos.length === 0 && doc.body.textContent?.toUpperCase().includes('GENERAL ADMISSION')) {
+      // Handle general admission case
+      tickets.push({
+        eventName,
+        eventDate,
+        eventTime,
+        venue,
+        city,
+        state,
+        section: 'FLOOR2',
+        row: 'N/A',
+        seat: 'N/A',
+        recipientEmail,
+        status: 'pending'
+      });
+    } else {
+      for (const seatInfo of seatingInfos) {
+        const text = seatInfo.textContent || '';
+        const isGeneralAdmission = text.toUpperCase().includes('GENERAL ADMISSION');
+
+        if (isGeneralAdmission) {
+          tickets.push({
+            eventName,
+            eventDate,
+            eventTime,
+            venue,
+            city,
+            state,
+            section: 'FLOOR2',
+            row: 'N/A',
+            seat: 'N/A',
+            recipientEmail,
+            status: 'pending'
+          });
+        } else {
+          const match = text.match(/Section\s+(\w+),\s*Row\s+(\d+),\s*Seat\s+(\d+)/i);
+          if (match) {
+            tickets.push({
+              eventName,
+              eventDate,
+              eventTime,
+              venue,
+              city,
+              state,
+              section: match[1],
+              row: match[2],
+              seat: match[3],
+              recipientEmail,
+              status: 'pending'
+            });
+          }
         }
       }
     }
 
-    return info;
+    return tickets;
   }
 
-  async processEmails() {
+  async scrapeTickets() {
     try {
       const response = await this.gmail.users.messages.list({
         userId: 'me',
-        q: 'from:@seatxfer.com is:unread', // Filter for unread emails from seatxfer.com
+        q: 'from:customer_support@email.ticketmaster.com is:unread'
       });
 
       const messages = response.data.messages || [];
-      console.log(`Found ${messages.length} unread messages from seatxfer.com`);
+      console.log(`Found ${messages.length} unread Ticketmaster messages`);
 
       for (const message of messages) {
         try {
           const email = await this.gmail.users.messages.get({
             userId: 'me',
             id: message.id,
-            format: 'full',
+            format: 'full'
           });
 
-          // Extract email headers
+          // Extract headers
           const headers = email.data.payload.headers;
-          const toHeader = headers.find((h: any) => h.name === 'To');
-          const fromHeader = headers.find((h: any) => h.name === 'From');
-          const subjectHeader = headers.find((h: any) => h.name === 'Subject');
+          const toAddress = headers.find((h: any) => h.name === 'To')?.value;
+          const fromAddress = headers.find((h: any) => h.name === 'From')?.value;
+          const subject = headers.find((h: any) => h.name === 'Subject')?.value;
 
-          const toAddress = toHeader?.value;
-          console.log('Processing email sent to:', toAddress);
+          if (!toAddress?.endsWith('@seatxfer.com')) {
+            console.log('Skipping non-seatxfer email:', toAddress);
+            continue;
+          }
 
-          // Find user by unique email
+          // Find associated user
           const [user] = await db
             .select()
             .from(users)
@@ -131,41 +183,51 @@ export class GmailScraper {
             continue;
           }
 
-          // Extract email body
-          let body = '';
-          if (email.data.payload.parts) {
-            const textPart = email.data.payload.parts.find(
-              (part: any) => part.mimeType === 'text/plain'
-            );
-            if (textPart?.body?.data) {
-              body = Buffer.from(textPart.body.data, 'base64').toString();
+          // Extract HTML content
+          let emailHtml = '';
+          if (email.data.payload.body?.data) {
+            emailHtml = Buffer.from(email.data.payload.body.data, 'base64').toString();
+          } else if (email.data.payload.parts) {
+            const htmlPart = email.data.payload.parts.find((part: any) => part.mimeType === 'text/html');
+            if (htmlPart?.body?.data) {
+              emailHtml = Buffer.from(htmlPart.body.data, 'base64').toString();
             }
-          } else if (email.data.payload.body?.data) {
-            body = Buffer.from(email.data.payload.body.data, 'base64').toString();
           }
 
-          // Extract ticket information
-          const ticketInfo = this.extractTicketInfo(body);
-          console.log('Extracted ticket info:', ticketInfo);
+          // Parse tickets from email
+          const tickets = this.parseTicketmasterEmail(emailHtml, toAddress);
+          console.log(`Extracted ${tickets.length} tickets from email`);
 
-          // Create pending ticket
-          const pendingTicket: InsertPendingTicket = {
-            userId: user.id,
-            emailSubject: subjectHeader?.value || '',
-            emailFrom: fromHeader?.value || '',
-            rawEmailData: body,
-            extractedData: ticketInfo,
-            status: 'pending',
-          };
+          // Store each ticket
+          for (const ticket of tickets) {
+            const pendingTicket: InsertPendingTicket = {
+              userId: user.id,
+              recipientEmail: toAddress,
+              eventName: ticket.eventName || '',
+              eventDate: ticket.eventDate || new Date(),
+              eventTime: ticket.eventTime || '',
+              venue: ticket.venue || '',
+              city: ticket.city || '',
+              state: ticket.state || '',
+              section: ticket.section || '',
+              row: ticket.row || '',
+              seat: ticket.seat || '',
+              emailSubject: subject || '',
+              emailFrom: fromAddress || '',
+              rawEmailData: emailHtml,
+              extractedData: ticket,
+              status: 'pending'
+            };
 
-          await db.insert(pendingTickets).values(pendingTicket);
-          console.log('Created pending ticket for user:', user.username);
+            await db.insert(pendingTickets).values(pendingTicket);
+            console.log('Created pending ticket for user:', user.username);
+          }
 
           // Mark email as read
           await this.gmail.users.messages.modify({
             userId: 'me',
             id: message.id,
-            requestBody: { removeLabelIds: ['UNREAD'] },
+            requestBody: { removeLabelIds: ['UNREAD'] }
           });
 
         } catch (error) {
@@ -173,11 +235,11 @@ export class GmailScraper {
         }
       }
     } catch (error) {
-      console.error('Error processing emails:', error);
+      console.error('Error scraping tickets:', error);
     }
   }
 
-  async startMonitoring(intervalMs = 120000) { // Check every 2 minutes
+  async startMonitoring(intervalMs = 300000) { // Check every 5 minutes
     const isAuthenticated = await this.authenticate();
     if (!isAuthenticated) {
       console.log('Gmail scraper not authenticated. Please authorize first.');
@@ -185,8 +247,8 @@ export class GmailScraper {
     }
 
     console.log('Starting Gmail monitoring...');
-    await this.processEmails(); // Initial check
-    setInterval(() => this.processEmails(), intervalMs);
+    await this.scrapeTickets();
+    setInterval(() => this.scrapeTickets(), intervalMs);
   }
 }
 

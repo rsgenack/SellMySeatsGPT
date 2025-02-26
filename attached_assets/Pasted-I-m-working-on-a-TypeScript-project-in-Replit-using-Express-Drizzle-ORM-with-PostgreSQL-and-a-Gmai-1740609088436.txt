@@ -1,0 +1,623 @@
+I’m working on a TypeScript project in Replit using Express, Drizzle ORM with PostgreSQL, and a Gmail API scraper to process ticket transfers. I need you to implement a new feature to scrape data from Ticketmaster email notifications about ticket transfers and integrate it into my existing project, displaying relevant data to users while mapping incoming emails ending in `@seatxfer.com` to their accounts. Use the following instructions, code, and details to proceed, and report back any questions, errors, or clarifications to me for final guidance. Handle all sensitive data (e.g., database URLs, API keys) securely within Replit’s Secrets, and do not expose it outside this project.
+
+### Objective
+Scrape data from Ticketmaster email notifications about ticket transfers and create a table with the following columns: `Recipient Email`, `Event Name`, `Date`, `Time`, `Stadium`, `City`, `State`, `Section`, `Row`, and `Seat`. The `Date` column should include the year (assume 2025, based on the current date of February 26, 2025). Integrate this into the web application for display to users, but not all data will be shown on user profiles—only key details (e.g., `Event Name`, `Date`, `Time`, `Stadium`, `Section`, `Row`, `Seat`). The `Recipient Email` (ending in `@seatxfer.com`) will map to the user’s account in our system, as defined in `shared/schema.ts`.
+
+### Existing Project Context
+- The project uses:
+  - **TypeScript/Express** for the backend (`server/index.ts`, `server/routes.ts`, `server/auth.ts`, `server/storage.ts`).
+  - **Drizzle ORM** with PostgreSQL (Neon Serverless) for the database, managed via `shared/schema.ts` and `drizzle.config.ts`.
+  - **Gmail API Scraper** in `server/gmail-scraper.ts` to process emails sent to "forwarding@sellmyseats.com" from `@seatxfer.com` addresses, storing ticket data in `pendingTickets`.
+- The database schema (`shared/schema.ts`) includes:
+  ```typescript
+  import { pgTable, varchar, text, timestamp, serial, integer, boolean, jsonb } from 'drizzle-orm/pg-core';
+
+  export const users = pgTable('users', {
+    id: serial('id').primaryKey(),
+    username: text('username').notNull().unique(),
+    password: text('password').notNull(),
+    uniqueEmail: varchar('uniqueEmail', { length: 255 }).notNull().unique(),
+    isAdmin: boolean('isAdmin').default(false),
+    createdAt: timestamp('created_at').defaultNow(),
+    email: text('email'), // Temporary, for migration
+    unique_email: text('unique_email'), // Temporary, for migration
+    email_credentials: text('email_credentials'), // Temporary, for migration
+    is_admin: boolean('is_admin'), // Temporary, for migration
+  });
+
+  export const pendingTickets = pgTable('pendingTickets', {
+    id: serial('id').primaryKey(),
+    userId: integer('user_id').references(() => users.id).notNull(),
+    emailSubject: text('email_subject'),
+    emailFrom: text('email_from'),
+    rawEmailData: text('raw_email_data'),
+    extractedData: jsonb('extracted_data'),
+    status: text('status').default('pending').notNull(),
+    createdAt: timestamp('created_at').defaultNow(),
+  });
+
+  export const session = pgTable('session', {
+    sid: varchar('sid', { length: 255 }).notNull().primaryKey(),
+    sess: jsonb('sess').notNull(),
+    expire: timestamp('expire').notNull(),
+  });
+
+  export const tickets = pgTable('tickets', {
+    id: serial('id').primaryKey(),
+    userId: integer('user_id').references(() => users.id).notNull(),
+    eventName: text('event_name'),
+    eventDate: timestamp('event_date'),
+    venue: text('venue'),
+    section: text('section'),
+    row: text('row'),
+    seat: text('seat'),
+    askingPrice: integer('asking_price').default(0),
+    status: text('status').default('pending').notNull(),
+    createdAt: timestamp('created_at').defaultNow(),
+  });
+
+  export const payments = pgTable('payments', {
+    id: serial('id').primaryKey(),
+    userId: integer('user_id').references(() => users.id).notNull(),
+    amount: integer('amount').notNull(),
+    createdAt: timestamp('created_at').defaultNow(),
+  });
+
+  // Type definitions
+  export type User = typeof users.$inferSelect;
+  export type InsertUser = typeof users.$inferInsert;
+  export type PendingTicket = typeof pendingTickets.$inferSelect;
+  export type InsertPendingTicket = typeof pendingTickets.$inferInsert;
+  export type Ticket = typeof tickets.$inferSelect;
+  export type InsertTicket = typeof tickets.$inferInsert;
+  export type Payment = typeof payments.$inferSelect;
+  export type InsertPayment = typeof payments.$inferInsert;
+
+The Gmail scraper (server/gmail-scraper.ts) currently parses text from emails and stores data in pendingTickets:
+// server/gmail-scraper.ts (partial)
+import { google } from 'googleapis';
+import { OAuth2Client } from 'google-auth-library';
+import { db } from './db';
+import { pendingTickets, type InsertPendingTicket } from '@shared/schema';
+import { eq } from 'drizzle-orm';
+
+const SCOPES = ['https://www.googleapis.com/auth/gmail.readonly'];
+
+export class GmailScraper {
+  private oauth2Client: OAuth2Client;
+  private gmail: any;
+
+  constructor() {
+    this.oauth2Client = new OAuth2Client(
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET,
+      'http://localhost:5000'
+    );
+  }
+
+  async authenticate() {
+    const token = process.env.GOOGLE_TOKEN;
+    if (token) this.oauth2Client.setCredentials(JSON.parse(token));
+    else {
+      const authUrl = this.oauth2Client.generateAuthUrl({ access_type: 'offline', scope: SCOPES, prompt: 'consent' });
+      console.log('Authorize this app by visiting this URL:', authUrl);
+      // Authorization code will be handled manually and stored in GOOGLE_TOKEN
+    }
+    this.gmail = google.gmail({ version: 'v1', auth: this.oauth2Client });
+  }
+
+  private parseTicketmasterEmail(html: string, recipientEmail: string): Partial<InsertPendingTicket>[] {
+    const soup = new DOMParser().parseFromString(html, 'text/html');
+    let event_name = null, date_time = null, location = null;
+    const seating: { Section: string, Row: string, Seat: string }[] = [];
+
+    const eventElements = Array.from(soup.querySelectorAll('p, div')) || [];
+    for (const element of eventElements) {
+      const text = element.textContent?.trim() || '';
+      if (text && !['ticket', 'transfer', 'accepted', 'status', 'terms'].some(keyword => text.toLowerCase().includes(keyword))) {
+        event_name = event_name || text;
+        break;
+      }
+    }
+
+    for (const element of eventElements) {
+      const text = element.textContent?.trim() || '';
+      if (text.includes('@') && ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].some(day => text.includes(day))) {
+        date_time = text;
+        break;
+      }
+    }
+
+    for (const element of eventElements) {
+      const text = element.textContent?.trim() || '';
+      if (text.includes(',') && !['ticket', 'transfer', 'accepted', 'status', 'terms'].some(keyword => text.toLowerCase().includes(keyword))) {
+        location = text;
+        break;
+      }
+    }
+
+    const seatingPattern = /Section\s+(\w+),\s+Row\s+(\d+),\s+Seat\s+(\d+)|Section\s+(\w+),\s+GENERAL\s+ADMISSION/;
+    for (const element of eventElements) {
+      const text = element.textContent?.trim() || '';
+      const matches = text.match(seatingPattern);
+      if (matches) {
+        if (matches[4]) { // General Admission
+          seating.push({ Section: matches[4], Row: 'N/A', Seat: 'N/A' });
+        } else { // Specific seat
+          seating.push({ Section: matches[1], Row: matches[2], Seat: matches[3] });
+        }
+      }
+    }
+
+    if (!seating.length && soup.textContent?.toUpperCase().includes('GENERAL ADMISSION')) {
+      seating.push({ Section: 'FLOOR2', Row: 'N/A', Seat: 'N/A' });
+    }
+
+    let date = null, time = null;
+    if (date_time) {
+      const [datePart, timePart] = date_time.split('@');
+      const dateStr = datePart.split(', ')[1];
+      time = timePart.trim();
+      date = `${dateStr}, 2025`; // Assume 2025
+    }
+
+    let stadium = null, city = null, state = null;
+    if (location) {
+      const parts = location.split(',').map(part => part.trim());
+      if (parts.length >= 3) {
+        [stadium, city, state] = parts;
+      } else if (parts.length === 2) { // Toronto case
+        stadium = city = parts[0];
+        state = parts[1];
+      }
+    }
+
+    const ticketData: Partial<InsertPendingTicket>[] = [];
+    for (const seat of seating) {
+      ticketData.push({
+        userId: 0, // Will be updated after mapping recipientEmail to user
+        recipientEmail: recipientEmail,
+        eventName: event_name || 'Unknown Event',
+        eventDate: date ? new Date(`${date} ${time}`).toISOString() : null,
+        eventTime: time || 'Unknown Time',
+        venue: stadium || 'Unknown Stadium',
+        city: city || 'Unknown City',
+        state: state || 'Unknown State',
+        section: seat.Section || 'Unknown Section',
+        row: seat.Row || 'Unknown Row',
+        seat: seat.Seat || 'Unknown Seat',
+        emailSubject: '', // Will be set from email headers
+        emailFrom: '', // Will be set from email headers
+        rawEmailData: '', // Will be set from email content
+        extractedData: {
+          eventName: event_name || 'Unknown Event',
+          eventDate: date ? new Date(`${date} ${time}`).toISOString() : null,
+          eventTime: time || 'Unknown Time',
+          venue: stadium || 'Unknown Stadium',
+          city: city || 'Unknown City',
+          state: state || 'Unknown State',
+          section: seat.Section || 'Unknown Section',
+          row: seat.Row || 'Unknown Row',
+          seat: seat.Seat || 'Unknown Seat',
+        } as any,
+        status: 'pending',
+      });
+    }
+    return ticketData;
+  }
+
+  async scrapeTickets() {
+    try {
+      const response = await this.gmail.users.messages.list({ userId: 'me', q: 'from:customer_support@email.ticketmaster.com is:unread' });
+      const messages = response.data.messages || [];
+      for (const message of messages) {
+        const msg = await this.gmail.users.messages.get({ userId: 'me', id: message.id! });
+        const headers = msg.data.payload?.headers || [];
+        let senderEmail = '';
+        let recipientEmail = '';
+        for (const header of headers) {
+          if (header.name === 'From' && header.value?.includes('customer_support@email.ticketmaster.com')) {
+            senderEmail = 'customer_support@email.ticketmaster.com';
+          } else if (header.name === 'To') {
+            recipientEmail = header.value?.match(/<([^>]+)>/)?.[1] || header.value || '';
+          }
+        }
+
+        if (senderEmail && recipientEmail.endsWith('@seatxfer.com')) {
+          const [user] = await db.select().from(users).where(eq(users.uniqueEmail, recipientEmail));
+          if (!user) {
+            console.log(`No user found for email: ${recipientEmail}`);
+            continue;
+          }
+
+          let emailHtml = '';
+          if (msg.data.payload?.body?.data) {
+            emailHtml = Buffer.from(msg.data.payload.body.data, 'base64').toString('utf-8');
+          } else if (msg.data.payload?.parts) {
+            for (const part of msg.data.payload.parts) {
+              if (part.mimeType === 'text/html' && part.body?.data) {
+                emailHtml = Buffer.from(part.body.data, 'base64').toString('utf-8');
+                break;
+              }
+            }
+          }
+
+          const ticketData = this.parseTicketmasterEmail(emailHtml, recipientEmail);
+          for (const ticket of ticketData) {
+            const pendingTicket: InsertPendingTicket = {
+              userId: user.id,
+              recipientEmail: ticket.recipientEmail,
+              eventName: ticket.eventName,
+              eventDate: ticket.eventDate ? new Date(ticket.eventDate).toISOString() : null,
+              eventTime: ticket.eventTime,
+              venue: ticket.venue,
+              city: ticket.city,
+              state: ticket.state,
+              section: ticket.section,
+              row: ticket.row,
+              seat: ticket.seat,
+              emailSubject: (headers.find(h => h.name === 'Subject')?.value || '').toString(),
+              emailFrom: senderEmail,
+              rawEmailData: JSON.stringify(msg.data),
+              extractedData: ticket.extractedData as any,
+              status: 'pending',
+            };
+            await db.insert(pendingTickets).values(pendingTicket);
+          }
+
+          await this.gmail.users.messages.modify({ userId: 'me', id: message.id!, requestBody: { removeLabelIds: ['UNREAD'] } });
+        }
+      }
+    } catch (error) { console.error('Error scraping tickets:', error); }
+  }
+
+  async startMonitoring(intervalMs = 300000) { // Check every 5 minutes
+    await this.authenticate();
+    this.scrapeTickets();
+    setInterval(() => this.scrapeTickets(), intervalMs);
+  }
+}
+
+export async function initGmailScraper() { const scraper = new GmailScraper(); await scraper.startMonitoring(); }
+
+The database is connected via server/db.ts and server/storage.ts, using Neon Serverless with DATABASE_URL in Replit Secrets.
+New Feature: Ticketmaster Email Scraping
+Implement a new feature to scrape Ticketmaster email notifications about ticket transfers, using the following details:
+
+Sample Emails and Data
+The emails are HTML-based notifications from customer_support@email.ticketmaster.com to a recipient (mapped to users.uniqueEmail ending in @seatxfer.com). Here are examples:
+
+Zach Bryan:
+HTML: <div><h1>Your Ticket Transfer From - Is Ready To Be Accepted!</h1><p>Zach Bryan</p><p>Sun, Jul 20 @ 7:00 PM</p><p>MetLife Stadium, East Rutherford, NJ</p><p>Section 114A, Row 23, Seat 1</p><p>Section 114A, Row 23, Seat 2</p></div>
+Data: Recipient Email: user@seatxfer.com, Event Name: Zach Bryan, Date: Jul 20, 2025, Time: 7:00 PM, Stadium: MetLife Stadium, City: East Rutherford, State: NJ, Section: 114A, Row: 23, Seat: 1 (and another row for Seat 2).
+The Fray:
+HTML: <div><h1>Your Ticket Transfer From - Is Ready To Be Accepted!</h1><p>THE FRAY-How To Save A Life: The 20th Anniversary Tour With The Strike</p><p>Thu, Aug 7 @ 7:00 PM</p><p>History, Toronto, ON</p><p>Section FLOOR2, GENERAL ADMISSION</p></div>
+Data: Recipient Email: user@seatxfer.com, Event Name: The Fray - How to Save a Life: The 20th Anniversary Tour with The Strike, Date: Aug 7, 2025, Time: 7:00 PM, Stadium: History, City: Toronto, State: ON, Section: FLOOR2, Row: N/A, Seat: N/A.
+Beyoncé: COWBOY CARTER TOUR (multiple dates/locations, e.g., May 25, Jun 11, Jul 11, Jul 13, 2025, at MetLife Stadium or Mercedes-Benz Stadium, with specific sections, rows, seats).
+Table Structure
+Create or update the pendingTickets table to include:
+
+recipientEmail: varchar(255) (maps to users.uniqueEmail, ending in @seatxfer.com).
+eventName: text
+eventDate: timestamp
+eventTime: text
+venue: text (Stadium)
+city: text
+state: text
+section: text
+row: text
+seat: text
+Update shared/schema.ts to reflect this, ensuring compatibility with existing pendingTickets:
+
+export const pendingTickets = pgTable('pendingTickets', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id).notNull(),
+  recipientEmail: varchar('recipient_email', { length: 255 }).notNull(), // Maps to users.uniqueEmail
+  eventName: text('event_name'),
+  eventDate: timestamp('event_date'),
+  eventTime: text('event_time'),
+  venue: text('venue'),
+  city: text('city'),
+  state: text('state'),
+  section: text('section'),
+  row: text('row'),
+  seat: text('seat'),
+  emailSubject: text('email_subject'),
+  emailFrom: text('email_from'),
+  rawEmailData: text('raw_email_data'),
+  extractedData: jsonb('extracted_data'),
+  status: text('status').default('pending').notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+Integration Requirements
+Update shared/schema.ts: Modify pendingTickets as shown above. Run npx drizzle-kit push in the Replit shell, choosing “No” for username/uniqueEmail constraints and “4” for pending_tickets to pendingTickets. Resolve any duplicate errors with safe SQL queries (e.g., SELECT ... FROM "public"."pendingTickets" ...).
+Update server/gmail-scraper.ts: Enhance the parseTicketmasterEmail and scrapeTickets methods to handle Ticketmaster HTML, extract the specified fields, and store them in pendingTickets. Use this TypeScript code, replacing or extending the existing parseTicketmasterEmail and scrapeTickets:
+
+private parseTicketmasterEmail(html: string, recipientEmail: string): Partial<InsertPendingTicket>[] {
+  const soup = new DOMParser().parseFromString(html, 'text/html');
+  let event_name = null, date_time = null, location = null;
+  const seating: { Section: string, Row: string, Seat: string }[] = [];
+
+  const eventElements = Array.from(soup.querySelectorAll('p, div')) || [];
+  for (const element of eventElements) {
+    const text = element.textContent?.trim() || '';
+    if (text && !['ticket', 'transfer', 'accepted', 'status', 'terms'].some(keyword => text.toLowerCase().includes(keyword))) {
+      event_name = event_name || text;
+      break;
+    }
+  }
+
+  for (const element of eventElements) {
+    const text = element.textContent?.trim() || '';
+    if (text.includes('@') && ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].some(day => text.includes(day))) {
+      date_time = text;
+      break;
+    }
+  }
+
+  for (const element of eventElements) {
+    const text = element.textContent?.trim() || '';
+    if (text.includes(',') && !['ticket', 'transfer', 'accepted', 'status', 'terms'].some(keyword => text.toLowerCase().includes(keyword))) {
+      location = text;
+      break;
+    }
+  }
+
+  const seatingPattern = /Section\s+(\w+),\s+Row\s+(\d+),\s+Seat\s+(\d+)|Section\s+(\w+),\s+GENERAL\s+ADMISSION/;
+  for (const element of eventElements) {
+    const text = element.textContent?.trim() || '';
+    const matches = text.match(seatingPattern);
+    if (matches) {
+      if (matches[4]) { // General Admission
+        seating.push({ Section: matches[4], Row: 'N/A', Seat: 'N/A' });
+      } else { // Specific seat
+        seating.push({ Section: matches[1], Row: matches[2], Seat: matches[3] });
+      }
+    }
+  }
+
+  if (!seating.length && soup.textContent?.toUpperCase().includes('GENERAL ADMISSION')) {
+    seating.push({ Section: 'FLOOR2', Row: 'N/A', Seat: 'N/A' });
+  }
+
+  let date = null, time = null;
+  if (date_time) {
+    const [datePart, timePart] = date_time.split('@');
+    const dateStr = datePart.split(', ')[1];
+    time = timePart.trim();
+    date = `${dateStr}, 2025`; // Assume 2025
+  }
+
+  let stadium = null, city = null, state = null;
+  if (location) {
+    const parts = location.split(',').map(part => part.trim());
+    if (parts.length >= 3) {
+      [stadium, city, state] = parts;
+    } else if (parts.length === 2) { // Toronto case
+      stadium = city = parts[0];
+      state = parts[1];
+    }
+  }
+
+  const ticketData: Partial<InsertPendingTicket>[] = [];
+  for (const seat of seating) {
+    ticketData.push({
+      userId: 0, // Will be updated after mapping recipientEmail to user
+      recipientEmail: recipientEmail,
+      eventName: event_name || 'Unknown Event',
+      eventDate: date ? new Date(`${date} ${time}`).toISOString() : null,
+      eventTime: time || 'Unknown Time',
+      venue: stadium || 'Unknown Stadium',
+      city: city || 'Unknown City',
+      state: state || 'Unknown State',
+      section: seat.Section || 'Unknown Section',
+      row: seat.Row || 'Unknown Row',
+      seat: seat.Seat || 'Unknown Seat',
+      emailSubject: '', // Will be set from email headers
+      emailFrom: '', // Will be set from email headers
+      rawEmailData: '', // Will be set from email content
+      extractedData: {
+        eventName: event_name || 'Unknown Event',
+        eventDate: date ? new Date(`${date} ${time}`).toISOString() : null,
+        eventTime: time || 'Unknown Time',
+        venue: stadium || 'Unknown Stadium',
+        city: city || 'Unknown City',
+        state: state || 'Unknown State',
+        section: seat.Section || 'Unknown Section',
+        row: seat.Row || 'Unknown Row',
+        seat: seat.Seat || 'Unknown Seat',
+      } as any,
+      status: 'pending',
+    });
+  }
+  return ticketData;
+}
+
+async scrapeTickets() {
+  try {
+    const response = await this.gmail.users.messages.list({ userId: 'me', q: 'from:customer_support@email.ticketmaster.com is:unread' });
+    const messages = response.data.messages || [];
+    for (const message of messages) {
+      const msg = await this.gmail.users.messages.get({ userId: 'me', id: message.id! });
+      const headers = msg.data.payload?.headers || [];
+      let senderEmail = '';
+      let recipientEmail = '';
+      for (const header of headers) {
+        if (header.name === 'From' && header.value?.includes('customer_support@email.ticketmaster.com')) {
+          senderEmail = 'customer_support@email.ticketmaster.com';
+        } else if (header.name === 'To') {
+          recipientEmail = header.value?.match(/<([^>]+)>/)?.[1] || header.value || '';
+        }
+      }
+
+      if (senderEmail && recipientEmail.endsWith('@seatxfer.com')) {
+        const [user] = await db.select().from(users).where(eq(users.uniqueEmail, recipientEmail));
+        if (!user) {
+          console.log(`No user found for email: ${recipientEmail}`);
+          continue;
+        }
+
+        let emailHtml = '';
+        if (msg.data.payload?.body?.data) {
+          emailHtml = Buffer.from(msg.data.payload.body.data, 'base64').toString('utf-8');
+        } else if (msg.data.payload?.parts) {
+          for (const part of msg.data.payload.parts) {
+            if (part.mimeType === 'text/html' && part.body?.data) {
+              emailHtml = Buffer.from(part.body.data, 'base64').toString('utf-8');
+              break;
+            }
+          }
+        }
+
+        const ticketData = this.parseTicketmasterEmail(emailHtml, recipientEmail);
+        for (const ticket of ticketData) {
+          const pendingTicket: InsertPendingTicket = {
+            userId: user.id,
+            recipientEmail: ticket.recipientEmail,
+            eventName: ticket.eventName,
+            eventDate: ticket.eventDate ? new Date(ticket.eventDate).toISOString() : null,
+            eventTime: ticket.eventTime,
+            venue: ticket.venue,
+            city: ticket.city,
+            state: ticket.state,
+            section: ticket.section,
+            row: ticket.row,
+            seat: ticket.seat,
+            emailSubject: (headers.find(h => h.name === 'Subject')?.value || '').toString(),
+            emailFrom: senderEmail,
+            rawEmailData: JSON.stringify(msg.data),
+            extractedData: ticket.extractedData as any,
+            status: 'pending',
+          };
+          await db.insert(pendingTickets).values(pendingTicket);
+        }
+
+        await this.gmail.users.messages.modify({ userId: 'me', id: message.id!, requestBody: { removeLabelIds: ['UNREAD'] } });
+      }
+    }
+  } catch (error) { console.error('Error scraping tickets:', error); }
+}
+
+async startMonitoring(intervalMs = 300000) { // Check every 5 minutes
+  await this.authenticate();
+  this.scrapeTickets();
+  setInterval(() => this.scrapeTickets(), intervalMs);
+}
+
+}
+
+export async function initGmailScraper() { const scraper = new GmailScraper(); await scraper.startMonitoring(); }
+
+- The database is connected via `server/db.ts` and `server/storage.ts`, using Neon Serverless with `DATABASE_URL` in Replit Secrets.
+
+### Integration Requirements
+- **Update `shared/schema.ts`**: Modify `pendingTickets` as shown above. Run `npx drizzle-kit push` in the Replit shell, choosing “No” for `username`/`uniqueEmail` constraints and “4” for `pending_tickets` to `pendingTickets`. Resolve any duplicate errors with safe SQL queries (e.g., `SELECT ... FROM "public"."pendingTickets" ...`).
+- **Update `server/gmail-scraper.ts`**: Enhance the `parseTicketmasterEmail` and `scrapeTickets` methods to handle Ticketmaster HTML, extract the specified fields, and store them in `pendingTickets`. Use the TypeScript code above, replacing or extending the existing `parseTicketmasterEmail` and `scrapeTickets`.
+- **Update `server/routes.ts`**: Add or modify an endpoint (e.g., `/api/tickets`):
+```typescript
+app.get('/api/tickets', async (req, res) => {
+  if (!req.isAuthenticated()) return res.sendStatus(401);
+  const tickets = await storage.getTickets(req.user.id);
+  res.json(tickets.map(t => ({
+    eventName: t.eventName,
+    eventDate: t.eventDate,
+    eventTime: t.eventTime,
+    venue: t.venue,
+    section: t.section,
+    row: t.row,
+    seat: t.seat,
+  })));
+});
+Update server/storage.ts to fetch from pendingTickets:
+async getTickets(userId: number): Promise<Pick<PendingTicket, 'eventName' | 'eventDate' | 'eventTime' | 'venue' | 'section' | 'row' | 'seat'>[]> {
+  return await db.select({ eventName: pendingTickets.eventName, eventDate: pendingTickets.eventDate, eventTime: pendingTickets.eventTime, venue: pendingTickets.venue, section: pendingTickets.section, row: pendingTickets.row, seat: pendingTickets.seat }).from(pendingTickets).where(eq(pendingTickets.userId, userId));
+}
+
+Frontend Update: Create or update client/src/components/Tickets.tsx:
+import { useState, useEffect } from 'react';
+import { useLocation } from 'wouter';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '../utils/api';
+
+export function Tickets() {
+  const [location] = useLocation();
+  const { data: tickets, isLoading, error } = useQuery(['tickets'], () => api.get('/api/tickets'));
+
+  if (isLoading) return <div>Loading tickets...</div>;
+  if (error) return <div>Error loading tickets: {error.message}</div>;
+
+  return (
+    <div className="p-4">
+      <h1 className="text-2xl font-bold mb-4">Your Tickets</h1>
+      {tickets?.length ? (
+        <ul className="space-y-4">
+          {tickets.map((ticket: any, index: number) => (
+            <li key={index} className="p-4 bg-gray-100 rounded">
+              <p><strong>Event:</strong> {ticket.eventName}</p>
+              <p><strong>Date:</strong> {new Date(ticket.eventDate).toLocaleDateString()}</p>
+              <p><strong>Time:</strong> {ticket.eventTime}</p>
+              <p><strong>Venue:</strong> {ticket.venue}</p>
+              <p><strong>Section:</strong> {ticket.section}</p>
+              <p><strong>Row:</strong> {ticket.row}</p>
+              <p><strong>Seat:</strong> {ticket.seat}</p>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>No tickets found.</p>
+      )}
+    </div>
+  );
+}
+
+Update client/src/main.tsx to include the Tickets component in routing:
+import { Router, Route } from 'wouter';
+import Tickets from './components/Tickets';
+
+function App() {
+  return (
+    <Router>
+      <Route path="/tickets" component={Tickets} />
+      {/* Other routes */}
+    </Router>
+  );
+}
+
+Scalability and Edge Cases
+Handle email format variations with try-catch in parseTicketmasterEmail.
+Prevent duplicates in pendingTickets by checking existing records before inserting:
+
+const existingTicket = await db.select().from(pendingTickets).where(and(
+  eq(pendingTickets.recipientEmail, recipientEmail),
+  eq(pendingTickets.eventName, eventName),
+  eq(pendingTickets.eventDate, eventDate),
+  eq(pendingTickets.section, section),
+  eq(pendingTickets.row, row),
+  eq(pendingTickets.seat, seat)
+));
+if (!existingTicket.length) await db.insert(pendingTickets).values(pendingTicket);
+Log errors or unparseable emails in Replit logs or a logs table in the database.
+
+Sensitive Information (Handle Securely in Replit)
+DATABASE_URL: postgres://[user]:[password]@[host]/[database] (replace with your Neon Serverless connection string, stored in Replit Secrets under DATABASE_URL).
+GOOGLE_CLIENT_ID: 70293014822-22osm1pr707l0ebe5mbqe7oh4et4cjfq.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET: 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
+GOOGLE_TOKEN: Leave empty for now (you’ll obtain this during Gmail authorization).
+Steps to Implement and Test
+Update shared/schema.ts: Modify pendingTickets as shown above. Ensure DATABASE_URL is in Replit Secrets, then run npx drizzle-kit push in the Replit shell, choosing “No” for username/uniqueEmail constraints and “4” for pending_tickets to pendingTickets. Resolve any duplicate errors with safe SQL queries (e.g., SELECT ... FROM "public"."pendingTickets" ...).
+Update server/gmail-scraper.ts: Replace or extend parseTicketmasterEmail and scrapeTickets with the TypeScript code above, targeting from:customer_support@email.ticketmaster.com emails.
+Update server/routes.ts and server/storage.ts: Add or modify /api/tickets and getTickets as shown above.
+Update Frontend: Create or update client/src/components/Tickets.tsx and client/src/main.tsx as shown, ensuring compatibility with vite.config, tailwind.config, wouter, and @tanstack/react-query.
+Test the Implementation:
+Ensure DATABASE_URL and Gmail credentials are in Replit Secrets.
+Run npx drizzle-kit push to apply pendingTickets changes.
+Authorize Gmail API (update GOOGLE_TOKEN in Secrets after authorization).
+Send a test Ticketmaster email from customer_support@email.ticketmaster.com to john.randomhash@seatxfer.com with sample HTML (e.g., Zach Bryan: <div><h1>Your Ticket Transfer From - Is Ready To Be Accepted!</h1><p>Zach Bryan</p><p>Sun, Jul 20 @ 7:00 PM</p><p>MetLife Stadium, East Rutherford, NJ</p><p>Section 114A, Row 23, Seat 1</p><p>Section 114A, Row 23, Seat 2</p></div>).
+Verify in Replit logs that the email is processed and data is stored in pendingTickets.
+Access /api/tickets in the frontend to display ticket data, ensuring only eventName, eventDate, eventTime, venue, section, row, seat are shown, not recipientEmail.
+Report Back
+Execute all steps above in Replit and Neon, monitoring for errors or issues.
+If you encounter any errors (e.g., during npx drizzle-kit push, SQL queries, Gmail authorization, frontend display, or data insertion), report the exact error message, step, and any relevant non-sensitive details (e.g., query output, log messages) back to me for guidance.
+If you need clarification (e.g., about email formats, frontend styling, or duplicate handling), ask specific, non-sensitive questions (e.g., “How should I handle missing Seat in some emails?” or “What Tailwind classes should I use for the Tickets component?”).
+Once all steps are complete and the project runs successfully (schema applied, data migrated, tickets scraped and displayed, Gmail scraper working), confirm the outcome (e.g., schema applied, ticket data in pendingTickets, frontend showing tickets, Gmail scraper working) back to me for final verification.
