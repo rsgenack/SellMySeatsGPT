@@ -163,7 +163,7 @@ export class EmailService {
 
   private async processNewEmails() {
     try {
-      console.log('Starting email processing with verbose logging...');
+      console.log('Starting email processing with detailed logging...');
       await this.promisifyImapOpen();
       this.status.lastChecked = new Date();
 
@@ -178,7 +178,6 @@ export class EmailService {
           console.log('Successfully opened INBOX, box info:', box);
 
           try {
-            // First try to get all emails in the inbox
             console.log('Searching for all emails in inbox...');
             const results = await this.promisifyImapSearch(['ALL']);
 
@@ -212,13 +211,18 @@ export class EmailService {
                 const ticketInfo = this.parseTicketInfo(email.text || '');
                 console.log('Extracted ticket info:', ticketInfo);
 
+                // Check if the email is addressed to a unique email in our system
                 const [user] = await db
                   .select()
                   .from(users)
                   .where(eq(users.uniqueEmail, email.to?.text || ''));
 
                 if (user) {
-                  console.log('Found matching user:', user.username);
+                  console.log('Found matching user for email:', {
+                    username: user.username,
+                    uniqueEmail: user.uniqueEmail,
+                    emailTo: email.to?.text
+                  });
 
                   await storage.createPendingTicket({
                     userId: user.id,

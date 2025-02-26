@@ -134,7 +134,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Initialize email service with environment variables
+  //New endpoint replacing old one.
   app.post("/api/email/start-monitoring", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
@@ -147,13 +147,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tls: true
       });
 
-      await emailService.processNewEmails();
-      res.json({ message: "Email monitoring started successfully" });
+      await emailService.startMonitoring();
+      const status = emailService.getStatus();
+      res.json({ 
+        message: "Email monitoring started successfully",
+        status: status
+      });
     } catch (error) {
       console.error("Error starting email monitoring:", error);
-      res.status(500).json({ error: "Failed to start email monitoring" });
+      res.status(500).json({ 
+        error: "Failed to start email monitoring",
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
+
 
   // Tickets
   app.get("/api/tickets", async (req, res) => {
