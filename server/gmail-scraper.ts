@@ -11,29 +11,34 @@ export class GmailScraper {
   private gmail: any;
 
   constructor() {
+    const redirectUri = process.env.REPL_SLUG && process.env.REPL_OWNER
+      ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`
+      : 'http://localhost:5000';
+
     this.oauth2Client = new OAuth2Client(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
-      'https://' + process.env.REPL_SLUG + '.' + process.env.REPL_OWNER + '.repl.co'
+      redirectUri
     );
   }
 
   async authenticate() {
-    if (!process.env.GOOGLE_TOKEN) {
-      const authUrl = this.oauth2Client.generateAuthUrl({
-        access_type: 'offline',
-        scope: SCOPES,
-      });
-      console.log('Authorize this app by visiting this URL:', authUrl);
-      return false;
-    }
-
     try {
+      if (!process.env.GOOGLE_TOKEN) {
+        const authUrl = this.oauth2Client.generateAuthUrl({
+          access_type: 'offline',
+          scope: SCOPES,
+          prompt: 'consent'
+        });
+        console.log('Authorize this app by visiting this URL:', authUrl);
+        return false;
+      }
+
       this.oauth2Client.setCredentials(JSON.parse(process.env.GOOGLE_TOKEN));
       this.gmail = google.gmail({ version: 'v1', auth: this.oauth2Client });
       return true;
     } catch (error) {
-      console.error('Error setting credentials:', error);
+      console.error('Error during Gmail authentication:', error);
       return false;
     }
   }
@@ -254,5 +259,9 @@ export class GmailScraper {
 
 export async function initGmailScraper() {
   const scraper = new GmailScraper();
-  await scraper.startMonitoring();
+  try {
+    await scraper.startMonitoring();
+  } catch (error) {
+    console.error('Failed to initialize Gmail scraper:', error);
+  }
 }
