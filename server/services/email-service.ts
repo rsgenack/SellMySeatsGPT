@@ -161,26 +161,6 @@ export class EmailService {
     }
   }
 
-  private parseOriginalRecipient(email: ParsedMail): string | undefined {
-    // Check the forwarded email headers
-    const originalTo = email.headers.get('x-forwarded-to') || 
-                      email.headers.get('delivered-to') ||
-                      email.headers.get('x-original-to');
-
-    if (originalTo && typeof originalTo === 'string' && originalTo.endsWith('@seatxfer.com')) {
-      return originalTo;
-    }
-
-    // If not found in headers, try to find in the email body
-    const toMatch = (email.text || '').match(/To: ([^\n]*@seatxfer\.com)/i);
-    if (toMatch && toMatch[1]) {
-      return toMatch[1].trim();
-    }
-
-    // Return the direct recipient as fallback
-    return email.to?.text;
-  }
-
   private async processNewEmails() {
     try {
       console.log('Starting email processing with detailed logging...');
@@ -220,10 +200,6 @@ export class EmailService {
                   textAsHtml: email.textAsHtml?.substring(0, 100) // First 100 chars of content
                 });
 
-                // Find the original @seatxfer.com recipient
-                const originalRecipient = this.parseOriginalRecipient(email);
-                console.log('Original recipient found:', originalRecipient);
-
                 const emailInfo = {
                   subject: email.subject || '',
                   from: email.from?.text || '',
@@ -235,17 +211,17 @@ export class EmailService {
                 const ticketInfo = this.parseTicketInfo(email.text || '');
                 console.log('Extracted ticket info:', ticketInfo);
 
-                // Check for user with the original seatxfer.com email
+                // Check if the email is addressed to a unique email in our system
                 const [user] = await db
                   .select()
                   .from(users)
-                  .where(eq(users.uniqueEmail, originalRecipient));
+                  .where(eq(users.uniqueEmail, email.to?.text || ''));
 
                 if (user) {
                   console.log('Found matching user for email:', {
                     username: user.username,
                     uniqueEmail: user.uniqueEmail,
-                    originalRecipient
+                    emailTo: email.to?.text
                   });
 
                   await storage.createPendingTicket({
@@ -266,7 +242,7 @@ export class EmailService {
                   emailInfo.status = 'processed';
                   console.log('Successfully processed email and created pending ticket');
                 } else {
-                  console.log('No matching user found for original recipient:', originalRecipient);
+                  console.log('No matching user found for email address:', email.to?.text);
                   emailInfo.status = 'error';
                 }
 

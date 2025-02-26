@@ -66,7 +66,7 @@ export default function DashboardPage() {
       <main className="container mx-auto py-8 px-4">
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>Your Ticket Submission Email Address</CardTitle> {/* More descriptive header */}
+            <CardTitle>Your Ticket Submission Email</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2 text-lg">
@@ -90,62 +90,48 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="mb-8"> {/* Added a card for better sectioning */}
-          <CardHeader>
-            <CardTitle>Dashboard Statistics</CardTitle> {/* More descriptive header */}
-          </CardHeader>
-          <CardContent>
-            <StatsCards tickets={tickets} payments={payments} />
-          </CardContent>
-        </Card>
+        <StatsCards tickets={tickets} payments={payments} />
 
-        <Card className="mb-8"> {/* Added a card for better sectioning */}
-          <CardHeader>
-            <CardTitle>Ticket Management</CardTitle> {/* More descriptive header */}
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="listings" className="mt-8">
-              <TabsList>
-                <TabsTrigger value="listings">My Tickets</TabsTrigger> {/* More descriptive label */}
-                <TabsTrigger value="pending">Pending Tickets</TabsTrigger>
-                <TabsTrigger value="new">Create New Listing</TabsTrigger> {/* More descriptive label */}
-              </TabsList>
+        <Tabs defaultValue="listings" className="mt-8">
+          <TabsList>
+            <TabsTrigger value="listings">My Listings</TabsTrigger>
+            <TabsTrigger value="pending">Pending Tickets</TabsTrigger>
+            <TabsTrigger value="new">New Listing</TabsTrigger>
+          </TabsList>
 
-              <TabsContent value="listings">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>My Listed Tickets</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <TicketList tickets={tickets} />
-                  </CardContent>
-                </Card>
-              </TabsContent>
+          <TabsContent value="listings">
+            <Card>
+              <CardHeader>
+                <CardTitle>My Tickets</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <TicketList tickets={tickets} />
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-              <TabsContent value="pending">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Pending Ticket Approvals</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <PendingTicketList />
-                  </CardContent>
-                </Card>
-              </TabsContent>
+          <TabsContent value="pending">
+            <Card>
+              <CardHeader>
+                <CardTitle>Pending Tickets</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <PendingTicketList />
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-              <TabsContent value="new">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Create a New Ticket Listing</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <TicketForm />
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+          <TabsContent value="new">
+            <Card>
+              <CardHeader>
+                <CardTitle>Create New Listing</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <TicketForm />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
