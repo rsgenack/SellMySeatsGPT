@@ -37,7 +37,7 @@ function generateUniqueEmail(username: string): string {
 
 export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET!,
+    secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
@@ -50,15 +50,18 @@ export function setupAuth(app: Express) {
 
   passport.use(
     new LocalStrategy(async (username, password, done) => {
-      const user = await storage.getUserByUsername(username);
-      if (!user || !(await comparePasswords(password, user.password))) {
-        return done(null, false);
-      } else {
+      try {
+        const user = await storage.getUserByUsername(username);
+        if (!user || !(await comparePasswords(password, user.password))) {
+          return done(null, false);
+        }
         const userWithAdmin = {
           ...user,
           isAdmin: username === 'admin'
         };
         return done(null, userWithAdmin);
+      } catch (error) {
+        return done(error);
       }
     }),
   );
@@ -93,7 +96,7 @@ export function setupAuth(app: Express) {
       const user = await storage.createUser({
         username,
         password: await hashPassword(password),
-        email: email || uniqueEmail, // Use provided email or generated one
+        email: email || uniqueEmail,
         uniqueEmail
       });
 
