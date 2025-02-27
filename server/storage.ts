@@ -1,9 +1,9 @@
+
 import { users, tickets, payments, pendingTickets, type User, type InsertUser, type Ticket, type InsertTicket, type Payment, type PendingTicket, type InsertPendingTicket } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
-import { db } from "./db";
 
 const PostgresSessionStore = connectPg(session);
 
