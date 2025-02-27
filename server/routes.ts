@@ -8,7 +8,7 @@ import { db } from './db';
 import { users } from '@shared/schema';
 import { config } from 'dotenv';
 import { requireAdmin } from "./middleware/admin";
-import { GmailScraper } from './gmail-scraper';
+import { GmailScraper, initGmailScraper } from './gmail-scraper';
 
 config();
 
