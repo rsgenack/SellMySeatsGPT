@@ -26,18 +26,28 @@ export class GmailScraper {
     );
   }
 
-  async authenticate(): Promise<boolean> {
+  async authenticate(): Promise<{ isAuthenticated: boolean; authUrl?: string }> {
     try {
       const authUrl = this.oauth2Client.generateAuthUrl({
         access_type: 'offline',
         scope: SCOPES,
         prompt: 'consent'
       });
-      console.log('Authorize this app by visiting this URL:', authUrl);
-      return false;
+      return { isAuthenticated: false, authUrl };
     } catch (error) {
       console.error('Error during Gmail authentication:', error);
-      return false;
+      return { isAuthenticated: false };
+    }
+  }
+
+  async handleAuthCallback(code: string): Promise<void> {
+    try {
+      const { tokens } = await this.oauth2Client.getToken(code);
+      this.oauth2Client.setCredentials(tokens);
+      this.gmail = google.gmail({ version: 'v1', auth: this.oauth2Client });
+    } catch (error) {
+      console.error('Error handling auth callback:', error);
+      throw error;
     }
   }
 
@@ -260,10 +270,11 @@ export class GmailScraper {
   }
 
   async startMonitoring(intervalMs = 300000) { // Check every 5 minutes
-    const isAuthenticated = await this.authenticate();
-    if (!isAuthenticated) {
+    const authResult = await this.authenticate();
+    if (!authResult.isAuthenticated) {
       console.log('Gmail scraper not authenticated. Please authorize first.');
-      return;
+      // Return the authUrl to the client
+      return authResult; // Modified to return authUrl
     }
 
     console.log('Starting Gmail monitoring...');

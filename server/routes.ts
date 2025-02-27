@@ -42,12 +42,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Gmail scraper authorization status
   app.get("/api/gmail/status", requireAdmin, async (req, res) => {
     try {
-      const isAuthenticated = await scraper.authenticate();
+      const authResult = await scraper.authenticate();
       res.json({
-        isAuthenticated,
-        message: isAuthenticated ? 
-          'Gmail scraper is authenticated and monitoring for ticket emails' : 
-          'Gmail authorization required. Please check server logs for the authorization URL.'
+        isAuthenticated: authResult.isAuthenticated,
+        authUrl: authResult.authUrl,
+        message: authResult.authUrl 
+          ? 'Please visit the following URL to authenticate Gmail access:' 
+          : 'Gmail scraper is authenticated and monitoring for ticket emails'
       });
     } catch (error) {
       console.error("Gmail status check error:", error);
