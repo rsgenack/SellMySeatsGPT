@@ -3,7 +3,7 @@ import { db } from "./db";
 import { eq } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
-import { pool } from "./db";
+import { db } from "./db";
 
 const PostgresSessionStore = connectPg(session);
 
@@ -25,7 +25,14 @@ export class DatabaseStorage implements IStorage {
 
   constructor() {
     this.sessionStore = new PostgresSessionStore({
-      pool,
+      conObject: {
+        query: (text, params, callback) => {
+          // Execute the query with Neon and handle the callback
+          db.execute(text, params)
+            .then(result => callback(null, result))
+            .catch(error => callback(error));
+        }
+      },
       createTableIfMissing: true,
       pruneSessionInterval: 60,
       tableName: 'session'
