@@ -28,11 +28,20 @@ export class GmailScraper {
 
   async authenticate(): Promise<{ isAuthenticated: boolean; authUrl?: string }> {
     try {
+      const token = process.env.GOOGLE_TOKEN;
+      if (token) {
+        this.oauth2Client.setCredentials(JSON.parse(token));
+        this.gmail = google.gmail({ version: 'v1', auth: this.oauth2Client });
+        return { isAuthenticated: true };
+      }
+
       const authUrl = this.oauth2Client.generateAuthUrl({
         access_type: 'offline',
         scope: SCOPES,
-        prompt: 'consent'
+        prompt: 'consent',
+        state: 'gmail_auth' // Optional: Add state for security
       });
+      console.log('Please authorize the Gmail API by visiting this URL:', authUrl);
       return { isAuthenticated: false, authUrl };
     } catch (error) {
       console.error('Error during Gmail authentication:', error);
@@ -45,6 +54,9 @@ export class GmailScraper {
       const { tokens } = await this.oauth2Client.getToken(code);
       this.oauth2Client.setCredentials(tokens);
       this.gmail = google.gmail({ version: 'v1', auth: this.oauth2Client });
+      // Store tokens in Replit Secrets securely
+      process.env.GOOGLE_TOKEN = JSON.stringify(tokens);
+      console.log('Gmail API authenticated successfully. Token stored in GOOGLE_TOKEN.');
     } catch (error) {
       console.error('Error handling auth callback:', error);
       throw error;
@@ -102,7 +114,7 @@ export class GmailScraper {
       // Handle general admission case
       tickets.push({
         eventName,
-        eventDate,
+        eventDate: eventDate?.toISOString() || null,
         eventTime,
         venue,
         city,
@@ -121,7 +133,7 @@ export class GmailScraper {
         if (isGeneralAdmission) {
           tickets.push({
             eventName,
-            eventDate,
+            eventDate: eventDate?.toISOString() || null,
             eventTime,
             venue,
             city,
@@ -137,7 +149,7 @@ export class GmailScraper {
           if (match) {
             tickets.push({
               eventName,
-              eventDate,
+              eventDate: eventDate?.toISOString() || null,
               eventTime,
               venue,
               city,
@@ -230,7 +242,7 @@ export class GmailScraper {
                 userId: user.id,
                 recipientEmail: toAddress,
                 eventName: ticket.eventName || '',
-                eventDate: ticket.eventDate || new Date(),
+                eventDate: ticket.eventDate || new Date().toISOString(),
                 eventTime: ticket.eventTime || '',
                 venue: ticket.venue || '',
                 city: ticket.city || '',
@@ -271,10 +283,9 @@ export class GmailScraper {
 
   async startMonitoring(intervalMs = 300000) { // Check every 5 minutes
     const authResult = await this.authenticate();
-    if (!authResult.isAuthenticated) {
-      console.log('Gmail scraper not authenticated. Please authorize first.');
-      // Return the authUrl to the client
-      return authResult; // Modified to return authUrl
+    if (!authResult.isAuthenticated && authResult.authUrl) {
+      console.log('Gmail scraper not authenticated. Please authorize using this URL:', authResult.authUrl);
+      return authResult; // Return authUrl for the client to handle
     }
 
     console.log('Starting Gmail monitoring...');
@@ -286,7 +297,11 @@ export class GmailScraper {
 export async function initGmailScraper() {
   const scraper = new GmailScraper();
   try {
-    await scraper.startMonitoring();
+    const result = await scraper.startMonitoring();
+    if (result && !result.isAuthenticated && result.authUrl) {
+      // Here you might want to return or handle this URL in your server routes
+      console.log('Authentication required. URL provided in logs.');
+    }
   } catch (error) {
     console.error('Failed to initialize Gmail scraper:', error);
   }

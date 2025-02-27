@@ -12,14 +12,51 @@ import { GmailScraper } from './gmail-scraper';
 
 config();
 
+let scraper: GmailScraper | null = null;
+
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
 
   // Initialize Gmail scraper
-  const scraper = new GmailScraper();
-  scraper.startMonitoring();
+  (async () => {
+    scraper = new GmailScraper();
+    await initGmailScraper();
+  })();
 
-  // Add user profile endpoint
+  // Get Gmail auth URL (open to authenticated users, not just admins)
+  app.get('/api/gmail/auth-url', async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!scraper) return res.status(500).json({ error: 'Gmail scraper not initialized' });
+    try {
+      const authResult = await scraper.authenticate();
+      if (!authResult.isAuthenticated && authResult.authUrl) {
+        res.json({ authUrl: authResult.authUrl, message: 'Please visit this URL to authenticate Gmail access' });
+      } else {
+        res.json({ authUrl: null, isAuthenticated: true, message: 'Gmail scraper is authenticated' });
+      }
+    } catch (error) {
+      console.error("Gmail auth URL error:", error);
+      res.status(500).json({ error: "Failed to generate Gmail auth URL" });
+    }
+  });
+
+  // Handle Gmail auth callback (open to authenticated users)
+  app.get('/api/gmail/callback', async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const { code } = req.query;
+    if (!code || typeof code !== 'string') return res.status(400).json({ error: 'Authorization code required' });
+    if (!scraper) return res.status(500).json({ error: 'Gmail scraper not initialized' });
+    try {
+      await scraper.handleAuthCallback(code);
+      await scraper.startMonitoring();
+      res.json({ status: 'authenticated', message: 'Gmail API authenticated successfully' });
+    } catch (error) {
+      console.error("Gmail authentication error:", error);
+      res.status(500).json({ error: "Failed to authenticate with Gmail" });
+    }
+  });
+
+  // Existing endpoints (unchanged, maintained for compatibility)
   app.get("/api/profile", async (req, res) => {
     if (!req.isAuthenticated()) {
       console.log('[Routes] Unauthenticated request to /api/profile');
@@ -39,10 +76,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Gmail scraper authorization status
   app.get("/api/gmail/status", requireAdmin, async (req, res) => {
     try {
-      const authResult = await scraper.authenticate();
+      const authResult = await scraper!.authenticate();
       res.json({
         isAuthenticated: authResult.isAuthenticated,
         authUrl: authResult.authUrl,
@@ -56,24 +92,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Gmail authentication callback
-  app.get("/api/gmail/callback", requireAdmin, async (req, res) => {
-    const { code } = req.query;
-    if (!code || typeof code !== 'string') {
-      return res.status(400).json({ error: 'Authorization code required' });
-    }
-
-    try {
-      await scraper.handleAuthCallback(code);
-      await scraper.startMonitoring();
-      res.json({ status: 'authenticated' });
-    } catch (error) {
-      console.error("Gmail authentication error:", error);
-      res.status(500).json({ error: "Failed to authenticate with Gmail" });
-    }
-  });
-
-  // Tickets
   app.get("/api/tickets", async (req, res) => {
     if (!req.isAuthenticated()) {
       console.log('[Routes] Unauthenticated request to /api/tickets');
@@ -112,7 +130,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Pending Tickets
   app.get("/api/pending-tickets", async (req, res) => {
     if (!req.isAuthenticated()) {
       console.log('[Routes] Unauthenticated request to /api/pending-tickets');
@@ -148,7 +165,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Email Webhook Endpoint
   app.post("/api/email-webhook", async (req, res) => {
     try {
       console.log("Received email webhook:", {
@@ -172,20 +188,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log("Found user:", user.username);
 
-      // Create a pending ticket from the email
+      // Create a pending ticket from the email, including recipientEmail
       const pendingTicket = await storage.createPendingTicket({
         userId: user.id,
+        recipientEmail: toEmail, // Add recipientEmail to match the schema
         emailSubject: emailData.subject,
         emailFrom: emailData.from,
         rawEmailData: emailData,
         extractedData: {
           // Initial parsing of the email data to extract ticket information
-          eventName: emailData.subject.split(" - ")[0],
-          eventDate: emailData.parsed?.date || "",
-          venue: emailData.parsed?.venue || "",
-          section: emailData.parsed?.section || "",
-          row: emailData.parsed?.row || "",
-          seat: emailData.parsed?.seat || "",
+          eventName: emailData.subject.split(" - ")[0] || '',
+          eventDate: emailData.parsed?.date || null,
+          venue: emailData.parsed?.venue || '',
+          section: emailData.parsed?.section || '',
+          row: emailData.parsed?.row || '',
+          seat: emailData.parsed?.seat || '',
         },
       });
 
@@ -197,7 +214,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Payments
   app.get("/api/payments", async (req, res) => {
     if (!req.isAuthenticated()) {
       console.log('[Routes] Unauthenticated request to /api/payments');
