@@ -1,3 +1,4 @@
+
 {
   "name": "rest-express",
   "version": "1.0.0",
@@ -98,12 +99,12 @@
     "@vitejs/plugin-react": "^4.3.2",
     "autoprefixer": "^10.4.20",
     "drizzle-kit": "^0.22.5",
-    "esbuild": "^0.25.0", // Defer update to ^0.20.2 post-MVP for vulnerabilities
+    "esbuild": "^0.25.0",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.14",
     "tsx": "^4.19.1",
     "typescript": "5.6.3",
-    "vite": "^5.4.14" // Defer update to ^5.2.11 post-MVP for vulnerabilities
+    "vite": "^5.4.14"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8"
