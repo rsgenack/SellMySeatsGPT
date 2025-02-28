@@ -64,8 +64,9 @@ export class GmailScraper {
   }
 
   private parseTicketmasterEmail(html: string, recipientEmail: string): Partial<InsertPendingTicket>[] {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
+    const { JSDOM } = require('jsdom');
+    const dom = new JSDOM(html);
+    const doc = dom.window.document;
     const tickets: Partial<InsertPendingTicket>[] = [];
 
     // Extract event name (first p tag after h1)
@@ -297,12 +298,19 @@ export class GmailScraper {
 export async function initGmailScraper() {
   const scraper = new GmailScraper();
   try {
-    const result = await scraper.startMonitoring();
-    if (result && !result.isAuthenticated && result.authUrl) {
-      // Here you might want to return or handle this URL in your server routes
-      console.log('Authentication required. URL provided in logs.');
+    console.log('Initializing Gmail scraper...');
+    const authResult = await scraper.authenticate();
+    if (!authResult.isAuthenticated && authResult.authUrl) {
+      console.log('Authentication required. Please visit this URL to authenticate:');
+      console.log(authResult.authUrl);
+      return { scraper, authUrl: authResult.authUrl };
+    } else {
+      console.log('Gmail scraper authenticated successfully.');
+      await scraper.startMonitoring();
+      return { scraper, authUrl: null };
     }
   } catch (error) {
     console.error('Failed to initialize Gmail scraper:', error);
+    return { scraper, error };
   }
 }

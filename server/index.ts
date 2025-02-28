@@ -57,10 +57,16 @@ app.use((req, res, next) => {
       serveStatic(app);
     }
 
-    // Initialize Gmail scraper
-    await initGmailScraper();
+    // Initialize Gmail scraper with better error handling
+    try {
+      const scraperResult = await initGmailScraper();
+      console.log('Gmail scraper initialization result:', 
+        scraperResult ? (scraperResult.authUrl ? 'Authentication needed' : 'Success') : 'Failed');
+    } catch (error) {
+      console.error('Gmail scraper initialization error:', error);
+    }
 
-    // Always serve on port 5000
+    // Serve on port 6000 as specified
     const port = 6000;
     server.listen({
       port,
