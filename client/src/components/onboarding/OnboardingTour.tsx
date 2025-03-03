@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import Joyride, { CallBackProps, STATUS, Step } from 'react-joyride';
+import Joyride, { CallBackProps, EVENTS, Step } from 'react-joyride';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 
@@ -45,8 +45,8 @@ export function OnboardingTour() {
   }, [user]);
 
   const handleJoyrideCallback = (data: CallBackProps) => {
-    const { status } = data;
-    if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
+    const { type } = data;
+    if ([EVENTS.TOUR_END, EVENTS.SKIP].includes(type)) {
       setRun(false);
       localStorage.setItem('hasSeenTour', 'true');
     }
@@ -80,9 +80,6 @@ export function OnboardingTour() {
           border: 'none',
           cursor: 'pointer',
           transition: 'opacity 0.2s ease',
-          '&:hover': {
-            opacity: 0.9,
-          },
         },
         buttonBack: {
           color: 'var(--foreground)',
@@ -94,9 +91,6 @@ export function OnboardingTour() {
           borderRadius: '6px',
           cursor: 'pointer',
           transition: 'background-color 0.2s ease',
-          '&:hover': {
-            backgroundColor: 'var(--accent)',
-          },
         },
         buttonSkip: {
           color: 'var(--muted-foreground)',
@@ -108,10 +102,6 @@ export function OnboardingTour() {
           border: '1px solid var(--border)',
           cursor: 'pointer',
           transition: 'all 0.2s ease',
-          '&:hover': {
-            backgroundColor: 'var(--accent)',
-            color: 'var(--accent-foreground)',
-          },
         },
         tooltipContainer: {
           textAlign: 'left',
