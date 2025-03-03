@@ -6,24 +6,29 @@ import { Button } from '@/components/ui/button';
 const steps: Step[] = [
   {
     target: '.email-submission',
-    content: 'This is your unique email address for ticket submissions. Forward your ticket transfer emails here to automatically process them.',
+    content: '👋 Welcome! This is your unique ticket submission email address. Any tickets forwarded to this address will be automatically processed and added to your account.',
+    placement: 'bottom',
     disableBeacon: true,
   },
   {
     target: '.stats-section',
-    content: 'View your ticket sales statistics and overall performance here.',
+    content: '📊 Your Dashboard Overview: Track your sales performance, monitor listings, and see your total revenue all in one place.',
+    placement: 'top',
   },
   {
     target: '.listings-tab',
-    content: 'View and manage all your ticket listings in one place.',
+    content: '🎫 My Listings: Here you can view and manage all your active ticket listings. Track sales status and update pricing.',
+    placement: 'bottom',
   },
   {
     target: '.pending-tab',
-    content: 'Check your pending tickets that are waiting to be processed.',
+    content: '⏳ Pending Tickets: When you forward ticket emails, they\'ll appear here first. Review and confirm the details before listing.',
+    placement: 'bottom',
   },
   {
     target: '.new-listing-tab',
-    content: 'Create new ticket listings manually from this section.',
+    content: '✨ Create New Listings: Need to list tickets manually? Use this tab to enter ticket details and set your asking price.',
+    placement: 'bottom',
   },
 ];
 
@@ -63,36 +68,71 @@ export function OnboardingTour() {
           textColor: 'var(--foreground)',
           backgroundColor: 'var(--background)',
           zIndex: 1000,
+          arrowColor: 'var(--background)',
         },
         buttonNext: {
           backgroundColor: 'var(--primary)',
           color: 'var(--primary-foreground)',
-          padding: '8px 16px',
+          padding: '10px 20px',
           borderRadius: '6px',
+          fontSize: '14px',
+          fontWeight: '500',
+          border: 'none',
+          cursor: 'pointer',
+          transition: 'opacity 0.2s ease',
+          '&:hover': {
+            opacity: 0.9,
+          },
         },
         buttonBack: {
           color: 'var(--foreground)',
-          marginRight: 8,
+          marginRight: 12,
+          padding: '10px 20px',
+          fontSize: '14px',
+          backgroundColor: 'transparent',
+          border: '1px solid var(--border)',
+          borderRadius: '6px',
+          cursor: 'pointer',
+          transition: 'background-color 0.2s ease',
+          '&:hover': {
+            backgroundColor: 'var(--accent)',
+          },
         },
         buttonSkip: {
           color: 'var(--muted-foreground)',
-          padding: '8px 16px',
+          padding: '10px 20px',
           borderRadius: '6px',
           textTransform: 'none',
+          fontSize: '14px',
+          backgroundColor: 'transparent',
+          border: '1px solid var(--border)',
+          cursor: 'pointer',
+          transition: 'all 0.2s ease',
+          '&:hover': {
+            backgroundColor: 'var(--accent)',
+            color: 'var(--accent-foreground)',
+          },
         },
         tooltipContainer: {
           textAlign: 'left',
-          padding: '20px',
+          padding: '24px',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
         },
         tooltipTitle: {
           color: 'var(--foreground)',
-          fontSize: '16px',
-          fontWeight: 'bold',
+          fontSize: '18px',
+          fontWeight: '600',
+          marginBottom: '12px',
         },
         tooltipContent: {
           color: 'var(--muted-foreground)',
-          fontSize: '14px',
-          margin: '8px 0',
+          fontSize: '15px',
+          lineHeight: '1.6',
+          margin: '16px 0',
+        },
+        spotlight: {
+          backgroundColor: 'rgba(0, 0, 0, 0.4)',
         },
       }}
       floaterProps={{
@@ -102,6 +142,7 @@ export function OnboardingTour() {
             spread: 12,
           },
         },
+        disableAnimation: false,
       }}
     />
   );
