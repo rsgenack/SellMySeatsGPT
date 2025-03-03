@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import Joyride, { CallBackProps, STATUS, Step } from 'react-joyride';
 import { useAuth } from '@/hooks/use-auth';
+import { Button } from '@/components/ui/button';
 
 const steps: Step[] = [
   {
@@ -29,7 +30,7 @@ const steps: Step[] = [
 export function OnboardingTour() {
   const [run, setRun] = useState(false);
   const { user } = useAuth();
-  
+
   useEffect(() => {
     // Check if this is the user's first visit
     const hasSeenTour = localStorage.getItem('hasSeenTour');
@@ -61,6 +62,45 @@ export function OnboardingTour() {
           primaryColor: 'var(--primary)',
           textColor: 'var(--foreground)',
           backgroundColor: 'var(--background)',
+          zIndex: 1000,
+        },
+        buttonNext: {
+          backgroundColor: 'var(--primary)',
+          color: 'var(--primary-foreground)',
+          padding: '8px 16px',
+          borderRadius: '6px',
+        },
+        buttonBack: {
+          color: 'var(--foreground)',
+          marginRight: 8,
+        },
+        buttonSkip: {
+          color: 'var(--muted-foreground)',
+          padding: '8px 16px',
+          borderRadius: '6px',
+          textTransform: 'none',
+        },
+        tooltipContainer: {
+          textAlign: 'left',
+          padding: '20px',
+        },
+        tooltipTitle: {
+          color: 'var(--foreground)',
+          fontSize: '16px',
+          fontWeight: 'bold',
+        },
+        tooltipContent: {
+          color: 'var(--muted-foreground)',
+          fontSize: '14px',
+          margin: '8px 0',
+        },
+      }}
+      floaterProps={{
+        styles: {
+          arrow: {
+            length: 8,
+            spread: 12,
+          },
         },
       }}
     />
