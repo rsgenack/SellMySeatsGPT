@@ -11,8 +11,12 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-// Set up Neon connection
-const sql = neon(process.env.DATABASE_URL);
+// Set up Neon connection with proper typing
+const sql = neon(process.env.DATABASE_URL!);
+const client = {
+  query: sql,
+  // Add other required NeonClient properties if needed
+};
 
-// Create drizzle connection
-export const db = drizzle(sql, { schema });
+// Create drizzle connection with the properly typed client
+export const db = drizzle(client, { schema });

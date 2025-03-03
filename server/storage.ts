@@ -1,4 +1,3 @@
-
 import { users, tickets, payments, pendingTickets, type User, type InsertUser, type Ticket, type InsertTicket, type Payment, type PendingTicket, type InsertPendingTicket } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -26,12 +25,8 @@ export class DatabaseStorage implements IStorage {
   constructor() {
     this.sessionStore = new PostgresSessionStore({
       conObject: {
-        query: (text, params, callback) => {
-          // Execute the query with Neon and handle the callback
-          db.execute(text, params)
-            .then(result => callback(null, result))
-            .catch(error => callback(error));
-        }
+        connectionString: process.env.DATABASE_URL,
+        ssl: true
       },
       createTableIfMissing: true,
       pruneSessionInterval: 60,
