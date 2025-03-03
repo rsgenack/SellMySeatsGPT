@@ -1,5 +1,6 @@
 import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
+import { JSDOM } from 'jsdom';
 import { db } from './db';
 import { users, pendingTickets, type InsertPendingTicket } from '@shared/schema';
 import { eq } from 'drizzle-orm';
@@ -64,35 +65,42 @@ export class GmailScraper {
   }
 
   private parseTicketmasterEmail(html: string, recipientEmail: string): Partial<InsertPendingTicket>[] {
-    const { JSDOM } = require('jsdom');
     const dom = new JSDOM(html);
     const doc = dom.window.document;
     const tickets: Partial<InsertPendingTicket>[] = [];
 
     // Extract event name (first p tag after h1)
-    const eventName = Array.from(doc.querySelectorAll('p'))
-      .find(p => !p.textContent?.toLowerCase().includes('transfer'))
-      ?.textContent?.trim() || 'Unknown Event';
+    const eventNameElement = Array.from(doc.getElementsByTagName('p'))
+      .find(p => p instanceof HTMLParagraphElement && 
+        !p.textContent?.toLowerCase().includes('transfer'));
+    const eventName = eventNameElement?.textContent?.trim() || 'Unknown Event';
 
     // Extract date and time
-    const dateTimeText = Array.from(doc.querySelectorAll('p'))
-      .find(p => p.textContent?.includes('@'))
-      ?.textContent?.trim() || '';
+    const dateTimeElement = Array.from(doc.getElementsByTagName('p'))
+      .find(p => p instanceof HTMLParagraphElement && 
+        p.textContent?.includes('@'));
+    const dateTimeText = dateTimeElement?.textContent?.trim() || '';
 
-    let eventDate = null;
+    let eventDate: Date | null = null;
     let eventTime = '';
     if (dateTimeText) {
       const [datePart, timePart] = dateTimeText.split('@').map(part => part.trim());
       const dateStr = datePart.split(', ')[1];
       eventTime = timePart;
-      // Assume 2025 for all dates as specified
-      eventDate = new Date(`${dateStr}, 2025 ${timePart}`);
+      try {
+        const parsedDate = new Date(`${dateStr}, 2025 ${timePart}`);
+        eventDate = parsedDate;
+      } catch (error) {
+        console.error('Error parsing date:', error);
+        eventDate = null;
+      }
     }
 
     // Extract venue, city, and state
-    const locationText = Array.from(doc.querySelectorAll('p'))
-      .find(p => p.textContent?.includes(','))
-      ?.textContent?.trim() || '';
+    const locationElement = Array.from(doc.getElementsByTagName('p'))
+      .find(p => p instanceof HTMLParagraphElement && 
+        p.textContent?.includes(','));
+    const locationText = locationElement?.textContent?.trim() || '';
 
     let [venue, city, state] = ['', '', ''];
     if (locationText) {
@@ -100,7 +108,6 @@ export class GmailScraper {
       if (parts.length >= 3) {
         [venue, city, state] = parts;
       } else if (parts.length === 2) {
-        // Handle Toronto case
         venue = parts[0];
         city = parts[0];
         state = parts[1];
@@ -108,14 +115,15 @@ export class GmailScraper {
     }
 
     // Extract seating information
-    const seatingInfos = Array.from(doc.querySelectorAll('p'))
-      .filter(p => p.textContent?.includes('Section') || p.textContent?.toUpperCase().includes('GENERAL ADMISSION'));
+    const seatingInfos = Array.from(doc.getElementsByTagName('p'))
+      .filter(p => p instanceof HTMLParagraphElement && 
+        (p.textContent?.includes('Section') || 
+         p.textContent?.toUpperCase().includes('GENERAL ADMISSION')));
 
     if (seatingInfos.length === 0 && doc.body.textContent?.toUpperCase().includes('GENERAL ADMISSION')) {
-      // Handle general admission case
       tickets.push({
         eventName,
-        eventDate: eventDate?.toISOString() || null,
+        eventDate,
         eventTime,
         venue,
         city,
@@ -134,7 +142,7 @@ export class GmailScraper {
         if (isGeneralAdmission) {
           tickets.push({
             eventName,
-            eventDate: eventDate?.toISOString() || null,
+            eventDate,
             eventTime,
             venue,
             city,
@@ -150,7 +158,7 @@ export class GmailScraper {
           if (match) {
             tickets.push({
               eventName,
-              eventDate: eventDate?.toISOString() || null,
+              eventDate,
               eventTime,
               venue,
               city,

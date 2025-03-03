@@ -66,8 +66,8 @@ app.use((req, res, next) => {
       console.error('Gmail scraper initialization error:', error);
     }
 
-    // Serve on port 6000 as specified
-    const port = 6000;
+    // ALWAYS serve the app on port 5000 as required
+    const port = 5000;
     server.listen({
       port,
       host: "0.0.0.0",

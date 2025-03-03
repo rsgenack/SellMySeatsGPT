@@ -8,7 +8,7 @@ export const users = pgTable('users', {
   password: text('password').notNull(),
   email: text('email').notNull(),
   uniqueEmail: varchar('uniqueEmail', { length: 255 }).notNull().unique(),
-  isAdmin: boolean('isAdmin').default(false),
+  isAdmin: boolean('isAdmin').notNull().default(false), // Changed to be non-nullable
   createdAt: timestamp('created_at').defaultNow(),
 });
 

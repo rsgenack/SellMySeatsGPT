@@ -10,7 +10,7 @@ import { User as SelectUser } from "@shared/schema";
 declare global {
   namespace Express {
     interface User extends SelectUser {
-      isAdmin: boolean;
+      isAdmin: boolean; // Matches the schema definition
     }
   }
 }
@@ -55,7 +55,11 @@ export function setupAuth(app: Express) {
         if (!user || !(await comparePasswords(password, user.password))) {
           return done(null, false);
         }
-        return done(null, user); 
+        // Ensure isAdmin is a boolean
+        return done(null, {
+          ...user,
+          isAdmin: Boolean(user.isAdmin)
+        });
       } catch (error) {
         return done(error);
       }
@@ -63,13 +67,18 @@ export function setupAuth(app: Express) {
   );
 
   passport.serializeUser((user, done) => done(null, user.id));
+
   passport.deserializeUser(async (id: number, done) => {
     try {
       const user = await storage.getUser(id);
       if (!user) {
         return done(null, false);
       }
-      done(null, user); 
+      // Ensure isAdmin is a boolean
+      done(null, {
+        ...user,
+        isAdmin: Boolean(user.isAdmin)
+      });
     } catch (err) {
       done(err);
     }
@@ -89,12 +98,19 @@ export function setupAuth(app: Express) {
         username,
         password: await hashPassword(password),
         email: email || uniqueEmail,
-        uniqueEmail
+        uniqueEmail,
+        isAdmin: false // Explicitly set isAdmin to false for new users
       });
 
-      req.login(user, (err) => {
+      // Ensure isAdmin is boolean in the session
+      const userWithBooleanAdmin = {
+        ...user,
+        isAdmin: Boolean(user.isAdmin)
+      };
+
+      req.login(userWithBooleanAdmin, (err) => {
         if (err) return next(err);
-        res.status(201).json(user);
+        res.status(201).json(userWithBooleanAdmin);
       });
     } catch (error) {
       console.error('Registration error:', error);
