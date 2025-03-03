@@ -26,7 +26,7 @@ export class DatabaseStorage implements IStorage {
     this.sessionStore = new PostgresSessionStore({
       conObject: {
         connectionString: process.env.DATABASE_URL,
-        ssl: true
+        ssl: process.env.NODE_ENV === 'production'
       },
       createTableIfMissing: true,
       pruneSessionInterval: 60,

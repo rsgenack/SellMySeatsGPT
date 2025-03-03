@@ -1,5 +1,5 @@
 import { neon, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
+import { drizzle } from 'drizzle-orm/neon-http';
 import ws from "ws";
 import * as schema from "@shared/schema";
 
@@ -12,11 +12,7 @@ if (!process.env.DATABASE_URL) {
 }
 
 // Set up Neon connection with proper typing
-const sql = neon(process.env.DATABASE_URL!);
-const client = {
-  query: sql,
-  // Add other required NeonClient properties if needed
-};
+const sql = neon(process.env.DATABASE_URL);
 
-// Create drizzle connection with the properly typed client
-export const db = drizzle(client, { schema });
+// Create drizzle connection
+export const db = drizzle(sql, { schema });
