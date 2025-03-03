@@ -39,8 +39,8 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-background">
       <OnboardingTour />
-      <nav className="border-b px-4 py-3">
-        <div className="container mx-auto flex justify-between items-center">
+      <nav className="bg-white shadow-md border-b">
+        <div className="container mx-auto flex justify-between items-center px-4 py-3">
           <Link href="/">
             <h1 className="text-2xl font-bold text-primary cursor-pointer">
               SellMySeats
@@ -71,15 +71,15 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <main className="container mx-auto py-8 px-4">
-        <Card className="mb-8">
+      <main className="container mx-auto py-8 px-4 space-y-8">
+        <Card>
           <CardHeader>
             <CardTitle>Your Ticket Submission Email</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2 text-lg email-submission">
-              <Mail className="h-5 w-5" />
-              <code className="bg-muted px-2 py-1 rounded flex-1">
+              <Mail className="h-5 w-5 text-muted-foreground" />
+              <code className="bg-muted px-4 py-2 rounded-md flex-1 font-mono text-sm">
                 {user?.uniqueEmail}
               </code>
               <Button
@@ -92,7 +92,7 @@ export default function DashboardPage() {
                 Copy
               </Button>
             </div>
-            <p className="mt-2 text-sm text-muted-foreground">
+            <p className="mt-4 text-sm text-muted-foreground">
               Send your Ticketmaster ticket transfer emails to this address. We'll automatically process them and add them to your pending tickets.
             </p>
           </CardContent>
@@ -102,11 +102,17 @@ export default function DashboardPage() {
           <StatsCards tickets={tickets} payments={payments} />
         </div>
 
-        <Tabs defaultValue="listings" className="mt-8">
-          <TabsList>
-            <TabsTrigger value="listings" className="listings-tab">My Listings</TabsTrigger>
-            <TabsTrigger value="pending" className="pending-tab">Pending Tickets</TabsTrigger>
-            <TabsTrigger value="new" className="new-listing-tab">New Listing</TabsTrigger>
+        <Tabs defaultValue="listings" className="space-y-4">
+          <TabsList className="w-full">
+            <TabsTrigger value="listings" className="listings-tab flex-1">
+              My Listings
+            </TabsTrigger>
+            <TabsTrigger value="pending" className="pending-tab flex-1">
+              Pending Tickets
+            </TabsTrigger>
+            <TabsTrigger value="new" className="new-listing-tab flex-1">
+              New Listing
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="listings">
