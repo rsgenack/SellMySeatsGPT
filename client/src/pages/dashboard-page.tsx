@@ -8,6 +8,7 @@ import TicketForm from "@/components/tickets/ticket-form";
 import TicketList from "@/components/tickets/ticket-list";
 import PendingTicketList from "@/components/tickets/pending-ticket-list";
 import StatsCards from "@/components/dashboard/stats-cards";
+import { GmailAuth } from "@/components/GmailAuth";
 import AdminNav from "@/components/layout/admin-nav";
 import { Link } from "wouter";
 import { LogOut, Mail, Copy } from "lucide-react";
@@ -95,6 +96,10 @@ export default function DashboardPage() {
             </p>
           </CardContent>
         </Card>
+
+        <div className="mb-8">
+          <GmailAuth />
+        </div>
 
         <StatsCards tickets={tickets} payments={payments} />
 
