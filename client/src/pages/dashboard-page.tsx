@@ -8,8 +8,8 @@ import TicketForm from "@/components/tickets/ticket-form";
 import TicketList from "@/components/tickets/ticket-list";
 import PendingTicketList from "@/components/tickets/pending-ticket-list";
 import StatsCards from "@/components/dashboard/stats-cards";
-import { GmailAuth } from "@/components/GmailAuth";
 import AdminNav from "@/components/layout/admin-nav";
+import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
 import { Link } from "wouter";
 import { LogOut, Mail, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -38,6 +38,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <OnboardingTour />
       <nav className="border-b px-4 py-3">
         <div className="container mx-auto flex justify-between items-center">
           <Link href="/">
@@ -76,7 +77,7 @@ export default function DashboardPage() {
             <CardTitle>Your Ticket Submission Email</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center gap-2 text-lg">
+            <div className="flex items-center gap-2 text-lg email-submission">
               <Mail className="h-5 w-5" />
               <code className="bg-muted px-2 py-1 rounded flex-1">
                 {user?.uniqueEmail}
@@ -97,17 +98,15 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <div className="mb-8">
-          <GmailAuth />
+        <div className="stats-section">
+          <StatsCards tickets={tickets} payments={payments} />
         </div>
-
-        <StatsCards tickets={tickets} payments={payments} />
 
         <Tabs defaultValue="listings" className="mt-8">
           <TabsList>
-            <TabsTrigger value="listings">My Listings</TabsTrigger>
-            <TabsTrigger value="pending">Pending Tickets</TabsTrigger>
-            <TabsTrigger value="new">New Listing</TabsTrigger>
+            <TabsTrigger value="listings" className="listings-tab">My Listings</TabsTrigger>
+            <TabsTrigger value="pending" className="pending-tab">Pending Tickets</TabsTrigger>
+            <TabsTrigger value="new" className="new-listing-tab">New Listing</TabsTrigger>
           </TabsList>
 
           <TabsContent value="listings">
