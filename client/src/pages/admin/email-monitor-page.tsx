@@ -27,7 +27,10 @@ interface EmailStatus {
     ticketInfo?: {
       eventName: string;
       eventDate: string;
+      eventTime: string; // Added
       venue: string;
+      city: string; // Added
+      state: string; // Added
       section: string;
       row: string;
       seat: string;
@@ -151,6 +154,9 @@ export default function AdminEmailMonitorPage() {
                                 }
                               </p>
                               <p className="text-sm text-muted-foreground">{email.ticketInfo.venue}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {email.ticketInfo.city}, {email.ticketInfo.state} {/* Added city and state */}
+                              </p>
                             </div>
                             <div className="text-sm">
                               <p><strong>Section:</strong> {email.ticketInfo.section}</p>
