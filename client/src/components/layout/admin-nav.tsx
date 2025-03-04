@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Mail, LineChart } from "lucide-react";
+import { Mail, LineChart, LayoutDashboard } from "lucide-react";
 
 export default function AdminNav() {
   const [location] = useLocation();
@@ -10,6 +10,16 @@ export default function AdminNav() {
       <div className="container mx-auto">
         <div className="flex items-center gap-4 px-4 py-2">
           <span className="text-sm font-medium text-muted-foreground">Admin Tools:</span>
+          <Link href="/admin">
+            <Button 
+              variant={location === "/admin" ? "secondary" : "ghost"} 
+              size="sm" 
+              className="gap-2"
+            >
+              <LayoutDashboard className="h-4 w-4" />
+              Dashboard
+            </Button>
+          </Link>
           <Link href="/admin/email-setup">
             <Button 
               variant={location === "/admin/email-setup" ? "secondary" : "ghost"} 

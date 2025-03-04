@@ -8,6 +8,7 @@ import { ProtectedRoute } from "./lib/protected-route";
 import HomePage from "@/pages/home-page";
 import AuthPage from "@/pages/auth-page";
 import DashboardPage from "@/pages/dashboard-page";
+import AdminDashboardPage from "@/pages/admin/dashboard-page";
 import AdminEmailSetupPage from "@/pages/admin/email-setup-page";
 import AdminEmailMonitorPage from "@/pages/admin/email-monitor-page";
 import NotFound from "@/pages/not-found";
@@ -19,12 +20,19 @@ function Router() {
       <Route path="/auth" component={AuthPage} />
       <ProtectedRoute path="/dashboard" component={DashboardPage} />
       <ProtectedRoute 
+        path="/admin" 
+        component={AdminDashboardPage} 
+        requireAdmin
+      />
+      <ProtectedRoute 
         path="/admin/email-setup" 
         component={AdminEmailSetupPage} 
+        requireAdmin 
       />
       <ProtectedRoute 
         path="/admin/email-monitor" 
         component={AdminEmailMonitorPage} 
+        requireAdmin 
       />
       <Route component={NotFound} />
     </Switch>
