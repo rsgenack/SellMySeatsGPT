@@ -30,7 +30,7 @@ export class GmailScraper {
     const redirectUri = `${baseUrl}/api/gmail/callback`;
     console.log('Using redirect URI:', redirectUri);
 
-    this.oauth2Client = new OAuth2Client(
+    this.oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
       redirectUri
