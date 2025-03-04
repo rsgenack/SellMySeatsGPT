@@ -20,6 +20,7 @@ interface EmailStatus {
   isConnected: boolean;
   lastChecked: string | null;
   isMonitoring: boolean;
+  needsAuth?: boolean;
   recentEmails: {
     subject: string;
     from: string;
@@ -67,11 +68,16 @@ export default function AdminEmailMonitorPage() {
       refetch();
     },
     onError: (error: Error) => {
-      toast({
-        title: "Monitoring Failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      if (error.message.includes('authentication required')) {
+        // Redirect to Gmail setup endpoint
+        window.location.href = '/api/admin/gmail/setup';
+      } else {
+        toast({
+          title: "Monitoring Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     },
   });
 
@@ -108,13 +114,20 @@ export default function AdminEmailMonitorPage() {
                   </span>
                 )}
               </div>
-              <Button
-                onClick={() => startMonitoringMutation.mutate()}
-                disabled={startMonitoringMutation.isPending}
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${startMonitoringMutation.isPending ? "animate-spin" : ""}`} />
-                Check New Emails
-              </Button>
+
+              {status?.needsAuth ? (
+                <div className="text-sm text-muted-foreground">
+                  Gmail authentication required. Please contact system administrator.
+                </div>
+              ) : (
+                <Button
+                  onClick={() => startMonitoringMutation.mutate()}
+                  disabled={startMonitoringMutation.isPending}
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${startMonitoringMutation.isPending ? "animate-spin" : ""}`} />
+                  Check New Emails
+                </Button>
+              )}
             </div>
 
             <div className="rounded-md border">

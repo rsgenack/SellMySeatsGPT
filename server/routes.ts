@@ -319,7 +319,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Add Gmail OAuth callback handler
+  // Add Gmail OAuth setup endpoint for admin
+  app.get("/api/admin/gmail/setup", requireAdmin, async (req, res) => {
+    try {
+      if (!scraper) {
+        return res.status(500).json({ 
+          error: "Gmail scraper not initialized",
+          details: "Please try again in a few moments"
+        });
+      }
+
+      const authResult = await scraper.authenticate();
+      if (!authResult.isAuthenticated) {
+        // Generate auth URL and redirect directly to Google OAuth
+        res.redirect(authResult.authUrl);
+      } else {
+        res.json({ 
+          status: "success",
+          message: "Gmail already authenticated"
+        });
+      }
+    } catch (error) {
+      console.error("Error setting up Gmail:", error);
+      res.status(500).json({ error: "Failed to setup Gmail integration" });
+    }
+  });
+
+  // Update the callback handler to be more robust
   app.get("/api/gmail/callback", async (req, res) => {
     try {
       if (!scraper) {
@@ -333,52 +359,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       await scraper.handleAuthCallback(code);
 
-      res.send(`
+      // After successful auth, redirect to admin email monitor page
+      res.redirect('/admin/email-monitor');
+    } catch (error) {
+      console.error('Error handling Gmail callback:', error);
+      res.status(500).send(`
         <html>
           <body>
-            <h1>Gmail Authentication Successful</h1>
-            <p>You can close this window and return to the application.</p>
-            <script>
-              setTimeout(() => window.close(), 3000);
-            </script>
+            <h1>Gmail Authentication Failed</h1>
+            <p>Error: ${error.message}</p>
+            <p>Please close this window and try again.</p>
           </body>
         </html>
       `);
-    } catch (error) {
-      console.error('Error handling Gmail callback:', error);
-      res.status(500).send('Failed to authenticate with Gmail');
     }
   });
 
-
-  // Add Gmail authentication status endpoint
-  app.get("/api/gmail/auth-url", requireAdmin, async (req, res) => {
-    try {
-      if (!scraper) {
-        return res.status(500).json({ 
-          error: "Gmail scraper not initialized",
-          details: "Please try again in a few moments"
-        });
-      }
-
-      const authResult = await scraper.authenticate();
-      if (!authResult.isAuthenticated) {
-        console.log('Generating new auth URL for Gmail authentication');
-        return res.json({ 
-          authUrl: authResult.authUrl,
-          message: "Please visit this URL to authenticate Gmail access"
-        });
-      }
-
-      res.json({ 
-        isAuthenticated: true,
-        message: "Gmail already authenticated"
-      });
-    } catch (error) {
-      console.error("Error getting auth URL:", error);
-      res.status(500).json({ error: "Failed to get authentication URL" });
-    }
-  });
 
   // Add email monitoring endpoint
   app.post("/api/admin/email/start-monitoring", requireAdmin, async (req, res) => {
