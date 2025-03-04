@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Mail, RefreshCw, Circle, Ticket } from "lucide-react";
+import { RefreshCw, Circle, Ticket } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -20,8 +20,6 @@ interface EmailStatus {
   isConnected: boolean;
   lastChecked: string | null;
   isMonitoring: boolean;
-  authUrl?: string;
-  isAuthenticated?: boolean;
   recentEmails: {
     subject: string;
     from: string;
@@ -59,33 +57,21 @@ export default function AdminEmailMonitorPage() {
   const startMonitoringMutation = useMutation({
     mutationFn: async () => {
       const response = await apiRequest("POST", "/api/admin/email/start-monitoring");
-      const data = await response.json();
-      if (data.needsAuth) {
-        window.open(data.authUrl, '_blank');
-        throw new Error('Gmail authentication required');
-      }
-      return data;
+      return response.json();
     },
     onSuccess: () => {
       toast({
         title: "Email Monitoring Started",
         description: "Checking for new ticket emails...",
       });
-      refetch(); // Refresh the status
+      refetch();
     },
     onError: (error: Error) => {
-      if (error.message === 'Gmail authentication required') {
-        toast({
-          title: "Authentication Required",
-          description: "Please authenticate with Gmail in the new window",
-        });
-      } else {
-        toast({
-          title: "Monitoring Failed",
-          description: error.message,
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Monitoring Failed",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -122,24 +108,13 @@ export default function AdminEmailMonitorPage() {
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-4">
-                {status?.authUrl && !status?.isAuthenticated && (
-                  <Button
-                    variant="outline"
-                    onClick={() => window.open(status.authUrl, '_blank')}
-                  >
-                    <Mail className="h-4 w-4 mr-2" />
-                    Authenticate Gmail
-                  </Button>
-                )}
-                <Button
-                  onClick={() => startMonitoringMutation.mutate()}
-                  disabled={startMonitoringMutation.isPending}
-                >
-                  <RefreshCw className={`h-4 w-4 mr-2 ${startMonitoringMutation.isPending ? "animate-spin" : ""}`} />
-                  Check New Emails
-                </Button>
-              </div>
+              <Button
+                onClick={() => startMonitoringMutation.mutate()}
+                disabled={startMonitoringMutation.isPending}
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${startMonitoringMutation.isPending ? "animate-spin" : ""}`} />
+                Check New Emails
+              </Button>
             </div>
 
             <div className="rounded-md border">
@@ -172,6 +147,7 @@ export default function AdminEmailMonitorPage() {
                             <p className="font-medium">{email.ticketInfo.eventName}</p>
                             <p className="text-sm text-muted-foreground">
                               {new Date(email.ticketInfo.eventDate).toLocaleDateString()}
+                              {email.ticketInfo.eventTime && ` ${email.ticketInfo.eventTime}`}
                             </p>
                             <p className="text-sm text-muted-foreground">{email.ticketInfo.venue}</p>
                             <p className="text-sm text-muted-foreground">

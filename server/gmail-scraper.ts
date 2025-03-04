@@ -6,6 +6,7 @@ import { users, pendingTickets, type InsertPendingTicket } from '@shared/schema'
 import { eq } from 'drizzle-orm';
 
 const SCOPES = ['https://www.googleapis.com/auth/gmail.readonly'];
+const CATCHALL_EMAIL = 'Forwarding@sellmyseats.com';
 
 export class GmailScraper {
   private oauth2Client: OAuth2Client;
@@ -41,16 +42,19 @@ export class GmailScraper {
   async getRecentEmails() {
     try {
       if (!this.gmail) {
+        console.log('Gmail API not initialized');
         return [];
       }
 
+      console.log(`Checking emails for catchall address: ${CATCHALL_EMAIL}`);
       const response = await this.gmail.users.messages.list({
         userId: 'me',
-        q: 'from:customer_support@email.ticketmaster.com',
-        maxResults: 10
+        q: `to:${CATCHALL_EMAIL}`,
+        maxResults: 20
       });
 
       const messages = response.data.messages || [];
+      console.log(`Found ${messages.length} messages for catchall address`);
       const recentEmails = [];
 
       for (const message of messages) {
@@ -66,6 +70,18 @@ export class GmailScraper {
         const subject = headers.find((h: any) => h.name === 'Subject')?.value;
         const date = headers.find((h: any) => h.name === 'Date')?.value;
 
+        // Extract forwarded recipient if it's a forwarded email
+        const originalRecipient = this.extractOriginalRecipient(email.data.payload);
+        const recipientEmail = originalRecipient || toAddress;
+
+        console.log('Processing email:', {
+          to: toAddress,
+          originalRecipient,
+          from: fromAddress,
+          subject,
+          date
+        });
+
         let emailHtml = '';
         if (email.data.payload.body?.data) {
           emailHtml = Buffer.from(email.data.payload.body.data, 'base64').toString();
@@ -76,17 +92,23 @@ export class GmailScraper {
           }
         }
 
-        const ticketInfo = this.parseTicketmasterEmail(emailHtml, toAddress);
+        // Only process if we can identify the original @seatxfer.com recipient
+        if (recipientEmail?.endsWith('@seatxfer.com')) {
+          const ticketInfo = this.parseTicketmasterEmail(emailHtml, recipientEmail);
 
-        recentEmails.push({
-          subject,
-          from: fromAddress,
-          date: new Date(date).toISOString(),
-          status: 'pending',
-          recipientEmail: toAddress,
-          userName: await this.getUsernameFromEmail(toAddress),
-          ticketInfo: ticketInfo[0] || null
-        });
+          if (ticketInfo.length > 0) {
+            console.log(`Found ticket information for ${recipientEmail}`);
+            recentEmails.push({
+              subject,
+              from: fromAddress,
+              date: new Date(date).toISOString(),
+              status: 'pending',
+              recipientEmail,
+              userName: await this.getUsernameFromEmail(recipientEmail),
+              ticketInfo: ticketInfo[0]
+            });
+          }
+        }
       }
 
       return recentEmails;
@@ -96,53 +118,43 @@ export class GmailScraper {
     }
   }
 
-  private async getUsernameFromEmail(email: string): Promise<string> {
+  private extractOriginalRecipient(payload: any): string | null {
+    // Try to find the original recipient from email headers or body
+    // This is needed when emails are forwarded to the catchall address
     try {
-      const [user] = await db
-        .select()
-        .from(users)
-        .where(eq(users.uniqueEmail, email));
-      return user?.username || 'Unknown User';
-    } catch (error) {
-      console.error('Error getting username:', error);
-      return 'Unknown User';
-    }
-  }
+      const headers = payload.headers;
+      // Check common forwarded email headers
+      const originalTo = headers.find((h: any) =>
+        h.name === 'X-Original-To' ||
+        h.name === 'Delivered-To' ||
+        h.name === 'X-Forwarded-To'
+      )?.value;
 
-  async authenticate(): Promise<{ isAuthenticated: boolean; authUrl?: string }> {
-    try {
-      const token = process.env.GOOGLE_TOKEN;
-      if (token) {
-        this.oauth2Client.setCredentials(JSON.parse(token));
-        this.gmail = google.gmail({ version: 'v1', auth: this.oauth2Client });
-        return { isAuthenticated: true };
+      if (originalTo?.endsWith('@seatxfer.com')) {
+        return originalTo;
       }
 
-      const authUrl = this.oauth2Client.generateAuthUrl({
-        access_type: 'offline',
-        scope: SCOPES,
-        prompt: 'consent',
-        state: 'gmail_auth' // Optional: Add state for security
-      });
-      console.log('Please authorize the Gmail API by visiting this URL:', authUrl);
-      return { isAuthenticated: false, authUrl };
-    } catch (error) {
-      console.error('Error during Gmail authentication:', error);
-      return { isAuthenticated: false };
-    }
-  }
+      // If not found in headers, try to parse from email body
+      let emailBody = '';
+      if (payload.body?.data) {
+        emailBody = Buffer.from(payload.body.data, 'base64').toString();
+      } else if (payload.parts) {
+        const textPart = payload.parts.find((part: any) => part.mimeType === 'text/plain');
+        if (textPart?.body?.data) {
+          emailBody = Buffer.from(textPart.body.data, 'base64').toString();
+        }
+      }
 
-  async handleAuthCallback(code: string): Promise<void> {
-    try {
-      const { tokens } = await this.oauth2Client.getToken(code);
-      this.oauth2Client.setCredentials(tokens);
-      this.gmail = google.gmail({ version: 'v1', auth: this.oauth2Client });
-      // Store tokens in Replit Secrets securely
-      process.env.GOOGLE_TOKEN = JSON.stringify(tokens);
-      console.log('Gmail API authenticated successfully. Token stored in GOOGLE_TOKEN.');
+      // Look for email addresses ending with @seatxfer.com in the body
+      const matches = emailBody.match(/[a-zA-Z0-9._%+-]+@seatxfer\.com/g);
+      if (matches && matches.length > 0) {
+        return matches[0];
+      }
+
+      return null;
     } catch (error) {
-      console.error('Error handling auth callback:', error);
-      throw error;
+      console.error('Error extracting original recipient:', error);
+      return null;
     }
   }
 
@@ -259,39 +271,89 @@ export class GmailScraper {
     return tickets;
   }
 
+  async getUsernameFromEmail(email: string): Promise<string> {
+    try {
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.uniqueEmail, email));
+      return user?.username || 'Unknown User';
+    } catch (error) {
+      console.error('Error getting username:', error);
+      return 'Unknown User';
+    }
+  }
+
+  async authenticate(): Promise<{ isAuthenticated: boolean; authUrl?: string }> {
+    try {
+      const token = process.env.GOOGLE_TOKEN;
+      if (token) {
+        this.oauth2Client.setCredentials(JSON.parse(token));
+        this.gmail = google.gmail({ version: 'v1', auth: this.oauth2Client });
+        return { isAuthenticated: true };
+      }
+
+      const authUrl = this.oauth2Client.generateAuthUrl({
+        access_type: 'offline',
+        scope: SCOPES,
+        prompt: 'consent',
+        state: 'gmail_auth' // Optional: Add state for security
+      });
+      console.log('Please authorize the Gmail API by visiting this URL:', authUrl);
+      return { isAuthenticated: false, authUrl };
+    } catch (error) {
+      console.error('Error during Gmail authentication:', error);
+      return { isAuthenticated: false };
+    }
+  }
+
+  async handleAuthCallback(code: string): Promise<void> {
+    try {
+      const { tokens } = await this.oauth2Client.getToken(code);
+      this.oauth2Client.setCredentials(tokens);
+      this.gmail = google.gmail({ version: 'v1', auth: this.oauth2Client });
+      // Store tokens in Replit Secrets securely
+      process.env.GOOGLE_TOKEN = JSON.stringify(tokens);
+      console.log('Gmail API authenticated successfully. Token stored in GOOGLE_TOKEN.');
+    } catch (error) {
+      console.error('Error handling auth callback:', error);
+      throw error;
+    }
+  }
+
   async scrapeTickets() {
     try {
       console.log('Starting to scrape tickets from Gmail...');
       this.lastChecked = new Date();
       const recentEmails = await this.getRecentEmails();
-      for (const email of recentEmails){
-          if (email.ticketInfo) {
-            try {
-              const pendingTicket: InsertPendingTicket = {
-                userId: (await this.getUsernameFromEmail(email.recipientEmail)).id,
-                recipientEmail: email.recipientEmail,
-                eventName: email.ticketInfo.eventName || '',
-                eventDate: email.ticketInfo.eventDate || new Date().toISOString(),
-                eventTime: email.ticketInfo.eventTime || '',
-                venue: email.ticketInfo.venue || '',
-                city: email.ticketInfo.city || '',
-                state: email.ticketInfo.state || '',
-                section: email.ticketInfo.section || '',
-                row: email.ticketInfo.row || '',
-                seat: email.ticketInfo.seat || '',
-                emailSubject: email.subject || '',
-                emailFrom: email.from || '',
-                rawEmailData: '', //Not implemented in new method
-                extractedData: email.ticketInfo,
-                status: 'pending'
-              };
+      for (const email of recentEmails) {
+        if (email.ticketInfo) {
+          try {
+            const pendingTicket: InsertPendingTicket = {
+              userId: (await this.getUsernameFromEmail(email.recipientEmail)).id,
+              recipientEmail: email.recipientEmail,
+              eventName: email.ticketInfo.eventName || '',
+              eventDate: email.ticketInfo.eventDate || new Date().toISOString(),
+              eventTime: email.ticketInfo.eventTime || '',
+              venue: email.ticketInfo.venue || '',
+              city: email.ticketInfo.city || '',
+              state: email.ticketInfo.state || '',
+              section: email.ticketInfo.section || '',
+              row: email.ticketInfo.row || '',
+              seat: email.ticketInfo.seat || '',
+              emailSubject: email.subject || '',
+              emailFrom: email.from || '',
+              rawEmailData: '', //Not implemented in new method
+              extractedData: email.ticketInfo,
+              status: 'pending'
+            };
 
-              await db.insert(pendingTickets).values(pendingTicket);
-              console.log('Successfully created pending ticket for user:', email.userName);
-            } catch (error) {
-              console.error('Error inserting pending ticket:', error);
-            }
+            await db.insert(pendingTickets).values(pendingTicket);
+            console.log('Successfully created pending ticket for user:', email.userName);
+          } catch (error) {
+            console.error('Error inserting pending ticket:', error);
           }
+        }
       }
     } catch (error) {
       console.error('Error scraping tickets:', error);
