@@ -351,6 +351,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
 
+  // Add Gmail authentication status endpoint
+  app.get("/api/gmail/auth-url", requireAdmin, async (req, res) => {
+    try {
+      if (!scraper) {
+        return res.status(500).json({ 
+          error: "Gmail scraper not initialized",
+          details: "Please try again in a few moments"
+        });
+      }
+
+      const authResult = await scraper.authenticate();
+      if (!authResult.isAuthenticated) {
+        console.log('Generating new auth URL for Gmail authentication');
+        return res.json({ 
+          authUrl: authResult.authUrl,
+          message: "Please visit this URL to authenticate Gmail access"
+        });
+      }
+
+      res.json({ 
+        isAuthenticated: true,
+        message: "Gmail already authenticated"
+      });
+    } catch (error) {
+      console.error("Error getting auth URL:", error);
+      res.status(500).json({ error: "Failed to get authentication URL" });
+    }
+  });
+
   // Add email monitoring endpoint
   app.post("/api/admin/email/start-monitoring", requireAdmin, async (req, res) => {
     try {
