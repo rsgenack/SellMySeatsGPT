@@ -19,6 +19,7 @@ import { apiRequest } from "@/lib/queryClient";
 interface EmailStatus {
   isConnected: boolean;
   lastChecked: string | null;
+  isMonitoring: boolean; // Added
   recentEmails: {
     subject: string;
     from: string;
@@ -155,7 +156,7 @@ export default function AdminEmailMonitorPage() {
                               </p>
                               <p className="text-sm text-muted-foreground">{email.ticketInfo.venue}</p>
                               <p className="text-sm text-muted-foreground">
-                                {email.ticketInfo.city}, {email.ticketInfo.state} {/* Added city and state */}
+                                {email.ticketInfo.city}, {email.ticketInfo.state}
                               </p>
                             </div>
                             <div className="text-sm">
