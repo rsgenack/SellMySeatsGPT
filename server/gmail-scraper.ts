@@ -16,19 +16,32 @@ export class GmailScraper {
   private monitoringInterval: NodeJS.Timeout | null = null;
 
   constructor() {
-    const redirectUri = process.env.REPL_SLUG && process.env.REPL_OWNER
-      ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co/api/gmail/callback`
-      : 'http://localhost:5000/api/gmail/callback';
-
     if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
       throw new Error('Google OAuth credentials are required');
     }
 
+    // Use the deployment URL or localhost for development
+    const baseUrl = process.env.REPL_SLUG && process.env.REPL_OWNER
+      ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`
+      : 'http://localhost:5000';
+
     this.oauth2Client = new OAuth2Client(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
-      redirectUri
+      `${baseUrl}/api/gmail/callback`
     );
+
+    // Try to load existing token
+    const token = process.env.GOOGLE_TOKEN;
+    if (token) {
+      try {
+        this.oauth2Client.setCredentials(JSON.parse(token));
+        this.gmail = google.gmail({ version: 'v1', auth: this.oauth2Client });
+        console.log('Successfully loaded existing Gmail credentials');
+      } catch (error) {
+        console.error('Error loading stored Gmail credentials:', error);
+      }
+    }
   }
 
   isMonitoring(): boolean {
@@ -387,18 +400,25 @@ export async function initGmailScraper() {
   try {
     console.log('Initializing Gmail scraper...');
     const scraper = new GmailScraper();
-    const authResult = await scraper.authenticate();
 
-    if (!authResult.isAuthenticated && authResult.authUrl) {
-      console.log('Authentication required. Please visit this URL to authenticate:');
-      console.log(authResult.authUrl);
-      return { scraper, authUrl: authResult.authUrl };
-    } else {
-      console.log('Gmail scraper authenticated successfully.');
-      return { scraper, authUrl: null };
+    // Add explicit error handling for authentication
+    try {
+      const authResult = await scraper.authenticate();
+
+      if (!authResult.isAuthenticated && authResult.authUrl) {
+        console.log('Authentication required. Please visit this URL to authenticate:');
+        console.log(authResult.authUrl);
+        return { scraper, authUrl: authResult.authUrl };
+      } else {
+        console.log('Gmail scraper authenticated successfully.');
+        return { scraper, authUrl: null };
+      }
+    } catch (error) {
+      console.error('Authentication error:', error);
+      return { error: 'Failed to authenticate with Gmail API' };
     }
   } catch (error) {
     console.error('Failed to initialize Gmail scraper:', error);
-    return { error };
+    return { error: 'Failed to initialize Gmail scraper' };
   }
 }

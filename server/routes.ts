@@ -135,7 +135,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Existing endpoints (unchanged)
+  // Existing endpoints
   app.get("/api/profile", async (req, res) => {
     if (!req.isAuthenticated()) {
       console.log('[Routes] Unauthenticated request to /api/profile');
@@ -318,6 +318,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: 'Failed to retrieve payments' });
     }
   });
+
+  // Add Gmail OAuth callback handler
+  app.get("/api/gmail/callback", async (req, res) => {
+    try {
+      if (!scraper) {
+        throw new Error('Gmail scraper not initialized');
+      }
+
+      const { code } = req.query;
+      if (!code || typeof code !== 'string') {
+        throw new Error('Invalid authorization code');
+      }
+
+      await scraper.handleAuthCallback(code);
+
+      res.send(`
+        <html>
+          <body>
+            <h1>Gmail Authentication Successful</h1>
+            <p>You can close this window and return to the application.</p>
+            <script>
+              setTimeout(() => window.close(), 3000);
+            </script>
+          </body>
+        </html>
+      `);
+    } catch (error) {
+      console.error('Error handling Gmail callback:', error);
+      res.status(500).send('Failed to authenticate with Gmail');
+    }
+  });
+
 
   // Add email monitoring endpoint
   app.post("/api/admin/email/start-monitoring", requireAdmin, async (req, res) => {
