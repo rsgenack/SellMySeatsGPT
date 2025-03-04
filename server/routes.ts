@@ -23,40 +23,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await initGmailScraper();
   })();
 
-  // Get Gmail auth URL (open to authenticated users, not just admins)
-  app.get('/api/gmail/auth-url', async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    if (!scraper) return res.status(500).json({ error: 'Gmail scraper not initialized' });
+  // Admin Export Routes
+  app.get("/api/admin/export/tickets", requireAdmin, async (req, res) => {
     try {
-      const authResult = await scraper.authenticate();
-      if (!authResult.isAuthenticated && authResult.authUrl) {
-        res.json({ authUrl: authResult.authUrl, message: 'Please visit this URL to authenticate Gmail access' });
-      } else {
-        res.json({ authUrl: null, isAuthenticated: true, message: 'Gmail scraper is authenticated' });
-      }
+      const tickets = await storage.getAllTickets();
+      const csvData = tickets.map(ticket => ({
+        id: ticket.id,
+        eventName: ticket.eventName,
+        eventDate: ticket.eventDate,
+        venue: ticket.venue,
+        section: ticket.section,
+        row: ticket.row,
+        seat: ticket.seat,
+        status: ticket.status,
+        askingPrice: ticket.askingPrice,
+        createdAt: ticket.createdAt,
+        userName: ticket.userName // Join with users table
+      }));
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename=tickets-${new Date().toISOString().split('T')[0]}.csv`);
+
+      // CSV header
+      res.write(Object.keys(csvData[0] || {}).join(',') + '\n');
+
+      // CSV rows
+      csvData.forEach(row => {
+        res.write(
+          Object.values(row)
+            .map(value => `"${value?.toString().replace(/"/g, '""')}"`)
+            .join(',') + '\n'
+        );
+      });
+
+      res.end();
     } catch (error) {
-      console.error("Gmail auth URL error:", error);
-      res.status(500).json({ error: "Failed to generate Gmail auth URL" });
+      console.error('Error exporting tickets:', error);
+      res.status(500).json({ error: 'Failed to export tickets' });
     }
   });
 
-  // Handle Gmail auth callback (open to authenticated users)
-  app.get('/api/gmail/callback', async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    const { code } = req.query;
-    if (!code || typeof code !== 'string') return res.status(400).json({ error: 'Authorization code required' });
-    if (!scraper) return res.status(500).json({ error: 'Gmail scraper not initialized' });
+  app.get("/api/admin/export/users", requireAdmin, async (req, res) => {
     try {
-      await scraper.handleAuthCallback(code);
-      await scraper.startMonitoring();
-      res.json({ status: 'authenticated', message: 'Gmail API authenticated successfully' });
+      const users = await storage.getAllUsers();
+      const csvData = users.map(user => ({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        ticketCount: user.ticketCount,
+        totalRevenue: user.totalRevenue,
+        createdAt: user.createdAt,
+        lastLogin: user.lastLogin
+      }));
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename=users-${new Date().toISOString().split('T')[0]}.csv`);
+
+      res.write(Object.keys(csvData[0] || {}).join(',') + '\n');
+      csvData.forEach(row => {
+        res.write(
+          Object.values(row)
+            .map(value => `"${value?.toString().replace(/"/g, '""')}"`)
+            .join(',') + '\n'
+        );
+      });
+
+      res.end();
     } catch (error) {
-      console.error("Gmail authentication error:", error);
-      res.status(500).json({ error: "Failed to authenticate with Gmail" });
+      console.error('Error exporting users:', error);
+      res.status(500).json({ error: 'Failed to export users' });
     }
   });
 
-  // Existing endpoints (unchanged, maintained for compatibility)
+  app.get("/api/admin/export/sales", requireAdmin, async (req, res) => {
+    try {
+      const sales = await storage.getAllSales();
+      const csvData = sales.map(sale => ({
+        id: sale.id,
+        ticketId: sale.ticketId,
+        eventName: sale.eventName,
+        salePrice: sale.salePrice,
+        saleDate: sale.saleDate,
+        buyerEmail: sale.buyerEmail,
+        sellerUsername: sale.sellerUsername,
+        commission: sale.commission
+      }));
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename=sales-${new Date().toISOString().split('T')[0]}.csv`);
+
+      res.write(Object.keys(csvData[0] || {}).join(',') + '\n');
+      csvData.forEach(row => {
+        res.write(
+          Object.values(row)
+            .map(value => `"${value?.toString().replace(/"/g, '""')}"`)
+            .join(',') + '\n'
+        );
+      });
+
+      res.end();
+    } catch (error) {
+      console.error('Error exporting sales:', error);
+      res.status(500).json({ error: 'Failed to export sales' });
+    }
+  });
+
+  // Existing endpoints (unchanged)
   app.get("/api/profile", async (req, res) => {
     if (!req.isAuthenticated()) {
       console.log('[Routes] Unauthenticated request to /api/profile');

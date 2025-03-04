@@ -14,6 +14,7 @@ import { User as SelectUser, Ticket, Payment } from "@shared/schema";
 import AdminNav from "@/components/layout/admin-nav";
 import { AnalyticsDashboard } from "@/components/admin/AnalyticsDashboard";
 import { Users, Ticket as TicketIcon, DollarSign } from "lucide-react";
+import { ExportReports } from "@/components/admin/ExportReports";
 
 export default function AdminDashboardPage() {
   const { user } = useAuth();
@@ -109,6 +110,9 @@ export default function AdminDashboardPage() {
 
         {/* Analytics Dashboard */}
         <AnalyticsDashboard tickets={tickets} payments={payments} />
+
+        {/* Export Reports Section */}
+        <ExportReports />
 
         {/* Recent Users */}
         <Card>
