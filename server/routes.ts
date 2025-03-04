@@ -154,8 +154,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         isAuthenticated: authResult.isAuthenticated,
         authUrl: authResult.authUrl,
-        message: authResult.authUrl 
-          ? 'Please visit the following URL to authenticate Gmail access:' 
+        message: authResult.authUrl
+          ? 'Please visit the following URL to authenticate Gmail access:'
           : 'Gmail scraper is authenticated and monitoring for ticket emails'
       });
     } catch (error) {
@@ -242,7 +242,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Received email webhook:", {
         to: req.body.to,
         from: req.body.from,
-        subject: req.body.subject
+        subject: req.body.subject,
+        rawData: req.body // Log full data for debugging
       });
 
       const emailData = req.body;
@@ -260,22 +261,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log("Found user:", user.username);
 
-      // Create a pending ticket from the email, including recipientEmail
+      // Enhanced ticket data extraction
+      const ticketData = {
+        eventName: emailData.subject.split(" - ")[0] || '',
+        eventDate: emailData.parsed?.date || null,
+        venue: emailData.parsed?.venue || '',
+        section: emailData.parsed?.section || '',
+        row: emailData.parsed?.row || '',
+        seat: emailData.parsed?.seat || '',
+        price: emailData.parsed?.price || null,
+        sellerInfo: emailData.parsed?.sellerInfo || '',
+        transferDetails: emailData.parsed?.transferDetails || '',
+        fullEmailBody: emailData.text || emailData.html || '', // Store full email content for reference
+      };
+
+      console.log("Extracted ticket data:", ticketData);
+
+      // Create a pending ticket from the email
       const pendingTicket = await storage.createPendingTicket({
         userId: user.id,
-        recipientEmail: toEmail, // Add recipientEmail to match the schema
+        recipientEmail: toEmail,
         emailSubject: emailData.subject,
         emailFrom: emailData.from,
         rawEmailData: emailData,
-        extractedData: {
-          // Initial parsing of the email data to extract ticket information
-          eventName: emailData.subject.split(" - ")[0] || '',
-          eventDate: emailData.parsed?.date || null,
-          venue: emailData.parsed?.venue || '',
-          section: emailData.parsed?.section || '',
-          row: emailData.parsed?.row || '',
-          seat: emailData.parsed?.seat || '',
-        },
+        extractedData: ticketData,
       });
 
       console.log("Created pending ticket:", pendingTicket);

@@ -31,6 +31,10 @@ interface EmailStatus {
       section: string;
       row: string;
       seat: string;
+      price: number | null;
+      sellerInfo: string;
+      transferDetails: string;
+      fullEmailBody: string;
     };
     recipientEmail: string;
     userName: string;
@@ -137,12 +141,36 @@ export default function AdminEmailMonitorPage() {
                       <TableCell className="font-medium">{email.userName}</TableCell>
                       <TableCell>
                         {email.ticketInfo ? (
-                          <div>
-                            <p className="font-medium">{email.ticketInfo.eventName}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {new Date(email.ticketInfo.eventDate).toLocaleDateString()}
-                            </p>
-                            <p className="text-sm text-muted-foreground">{email.ticketInfo.venue}</p>
+                          <div className="space-y-2">
+                            <div>
+                              <p className="font-medium">{email.ticketInfo.eventName}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {email.ticketInfo.eventDate ?
+                                  new Date(email.ticketInfo.eventDate).toLocaleDateString() :
+                                  'Date pending'
+                                }
+                              </p>
+                              <p className="text-sm text-muted-foreground">{email.ticketInfo.venue}</p>
+                            </div>
+                            <div className="text-sm">
+                              <p><strong>Section:</strong> {email.ticketInfo.section}</p>
+                              <p><strong>Row:</strong> {email.ticketInfo.row}</p>
+                              <p><strong>Seat:</strong> {email.ticketInfo.seat}</p>
+                              {email.ticketInfo.price && (
+                                <p><strong>Price:</strong> ${email.ticketInfo.price.toFixed(2)}</p>
+                              )}
+                            </div>
+                            {email.ticketInfo.sellerInfo && (
+                              <p className="text-sm"><strong>Seller:</strong> {email.ticketInfo.sellerInfo}</p>
+                            )}
+                            {email.ticketInfo.transferDetails && (
+                              <details className="text-sm">
+                                <summary className="cursor-pointer text-primary">Transfer Details</summary>
+                                <p className="mt-2 whitespace-pre-wrap text-muted-foreground">
+                                  {email.ticketInfo.transferDetails}
+                                </p>
+                              </details>
+                            )}
                           </div>
                         ) : (
                           <span className="text-muted-foreground">Processing...</span>
@@ -166,8 +194,8 @@ export default function AdminEmailMonitorPage() {
                       <TableCell>
                         <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
                           email.status === 'processed' ? 'bg-green-50 text-green-700' :
-                          email.status === 'pending' ? 'bg-yellow-50 text-yellow-700' :
-                          'bg-red-50 text-red-700'
+                            email.status === 'pending' ? 'bg-yellow-50 text-yellow-700' :
+                              'bg-red-50 text-red-700'
                         }`}>
                           {email.status}
                         </span>
