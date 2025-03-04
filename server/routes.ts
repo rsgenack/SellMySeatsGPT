@@ -19,8 +19,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Initialize Gmail scraper
   (async () => {
-    scraper = new GmailScraper();
-    await initGmailScraper();
+    try {
+      const result = await initGmailScraper();
+      if (result?.scraper) {
+        scraper = result.scraper;
+        console.log('Gmail scraper initialized successfully');
+      }
+    } catch (error) {
+      console.error('Failed to initialize Gmail scraper:', error);
+    }
   })();
 
   // Admin Export Routes
@@ -311,6 +318,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: 'Failed to retrieve payments' });
     }
   });
+
+  // Add email monitoring endpoint
+  app.post("/api/admin/email/start-monitoring", requireAdmin, async (req, res) => {
+    try {
+      if (!scraper) {
+        return res.status(500).json({ 
+          error: "Gmail scraper not initialized",
+          details: "Please try again in a few moments"
+        });
+      }
+
+      const authResult = await scraper.authenticate();
+
+      if (!authResult.isAuthenticated && authResult.authUrl) {
+        return res.status(401).json({
+          needsAuth: true,
+          authUrl: authResult.authUrl,
+          message: "Gmail authentication required"
+        });
+      }
+
+      await scraper.startMonitoring();
+
+      res.json({ 
+        message: "Email monitoring started successfully",
+        isAuthenticated: true,
+        isMonitoring: true
+      });
+    } catch (error) {
+      console.error("Error in email monitoring:", error);
+      res.status(500).json({ 
+        error: "Failed to start email monitoring",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  // Add email status endpoint
+  app.get("/api/admin/email/status", requireAdmin, async (req, res) => {
+    try {
+      if (!scraper) {
+        return res.status(500).json({ 
+          error: "Gmail scraper not initialized",
+          isConnected: false,
+          isMonitoring: false
+        });
+      }
+
+      const authResult = await scraper.authenticate();
+
+      res.json({
+        isConnected: authResult.isAuthenticated,
+        isAuthenticated: authResult.isAuthenticated,
+        authUrl: authResult.authUrl,
+        isMonitoring: scraper.isMonitoring(),
+        lastChecked: scraper.getLastChecked(),
+        recentEmails: await scraper.getRecentEmails()
+      });
+    } catch (error) {
+      console.error("Error getting email status:", error);
+      res.status(500).json({ 
+        error: "Failed to get email status",
+        details: error instanceof Error ? error.message : "Unknown error",
+        isConnected: false,
+        isMonitoring: false
+      });
+    }
+  });
+
 
   const httpServer = createServer(app);
   return httpServer;

@@ -10,6 +10,9 @@ const SCOPES = ['https://www.googleapis.com/auth/gmail.readonly'];
 export class GmailScraper {
   private oauth2Client: OAuth2Client;
   private gmail: any;
+  private isMonitoringActive: boolean = false;
+  private lastChecked: Date | null = null;
+  private monitoringInterval: NodeJS.Timeout | null = null;
 
   constructor() {
     const redirectUri = process.env.REPL_SLUG && process.env.REPL_OWNER
@@ -25,6 +28,85 @@ export class GmailScraper {
       process.env.GOOGLE_CLIENT_SECRET,
       redirectUri
     );
+  }
+
+  isMonitoring(): boolean {
+    return this.isMonitoringActive;
+  }
+
+  getLastChecked(): Date | null {
+    return this.lastChecked;
+  }
+
+  async getRecentEmails() {
+    try {
+      if (!this.gmail) {
+        return [];
+      }
+
+      const response = await this.gmail.users.messages.list({
+        userId: 'me',
+        q: 'from:customer_support@email.ticketmaster.com',
+        maxResults: 10
+      });
+
+      const messages = response.data.messages || [];
+      const recentEmails = [];
+
+      for (const message of messages) {
+        const email = await this.gmail.users.messages.get({
+          userId: 'me',
+          id: message.id,
+          format: 'full'
+        });
+
+        const headers = email.data.payload.headers;
+        const toAddress = headers.find((h: any) => h.name === 'To')?.value;
+        const fromAddress = headers.find((h: any) => h.name === 'From')?.value;
+        const subject = headers.find((h: any) => h.name === 'Subject')?.value;
+        const date = headers.find((h: any) => h.name === 'Date')?.value;
+
+        let emailHtml = '';
+        if (email.data.payload.body?.data) {
+          emailHtml = Buffer.from(email.data.payload.body.data, 'base64').toString();
+        } else if (email.data.payload.parts) {
+          const htmlPart = email.data.payload.parts.find((part: any) => part.mimeType === 'text/html');
+          if (htmlPart?.body?.data) {
+            emailHtml = Buffer.from(htmlPart.body.data, 'base64').toString();
+          }
+        }
+
+        const ticketInfo = this.parseTicketmasterEmail(emailHtml, toAddress);
+
+        recentEmails.push({
+          subject,
+          from: fromAddress,
+          date: new Date(date).toISOString(),
+          status: 'pending',
+          recipientEmail: toAddress,
+          userName: await this.getUsernameFromEmail(toAddress),
+          ticketInfo: ticketInfo[0] || null
+        });
+      }
+
+      return recentEmails;
+    } catch (error) {
+      console.error('Error getting recent emails:', error);
+      return [];
+    }
+  }
+
+  private async getUsernameFromEmail(email: string): Promise<string> {
+    try {
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.uniqueEmail, email));
+      return user?.username || 'Unknown User';
+    } catch (error) {
+      console.error('Error getting username:', error);
+      return 'Unknown User';
+    }
   }
 
   async authenticate(): Promise<{ isAuthenticated: boolean; authUrl?: string }> {
@@ -71,13 +153,13 @@ export class GmailScraper {
 
     // Extract event name (first p tag after h1)
     const eventNameElement = Array.from(doc.getElementsByTagName('p'))
-      .find(p => p instanceof HTMLParagraphElement && 
+      .find(p => p instanceof HTMLParagraphElement &&
         !p.textContent?.toLowerCase().includes('transfer'));
     const eventName = eventNameElement?.textContent?.trim() || 'Unknown Event';
 
     // Extract date and time
     const dateTimeElement = Array.from(doc.getElementsByTagName('p'))
-      .find(p => p instanceof HTMLParagraphElement && 
+      .find(p => p instanceof HTMLParagraphElement &&
         p.textContent?.includes('@'));
     const dateTimeText = dateTimeElement?.textContent?.trim() || '';
 
@@ -98,7 +180,7 @@ export class GmailScraper {
 
     // Extract venue, city, and state
     const locationElement = Array.from(doc.getElementsByTagName('p'))
-      .find(p => p instanceof HTMLParagraphElement && 
+      .find(p => p instanceof HTMLParagraphElement &&
         p.textContent?.includes(','));
     const locationText = locationElement?.textContent?.trim() || '';
 
@@ -116,9 +198,9 @@ export class GmailScraper {
 
     // Extract seating information
     const seatingInfos = Array.from(doc.getElementsByTagName('p'))
-      .filter(p => p instanceof HTMLParagraphElement && 
-        (p.textContent?.includes('Section') || 
-         p.textContent?.toUpperCase().includes('GENERAL ADMISSION')));
+      .filter(p => p instanceof HTMLParagraphElement &&
+        (p.textContent?.includes('Section') ||
+          p.textContent?.toUpperCase().includes('GENERAL ADMISSION')));
 
     if (seatingInfos.length === 0 && doc.body.textContent?.toUpperCase().includes('GENERAL ADMISSION')) {
       tickets.push({
@@ -180,110 +262,36 @@ export class GmailScraper {
   async scrapeTickets() {
     try {
       console.log('Starting to scrape tickets from Gmail...');
-      const response = await this.gmail.users.messages.list({
-        userId: 'me',
-        q: 'from:customer_support@email.ticketmaster.com is:unread'
-      });
-
-      const messages = response.data.messages || [];
-      console.log(`Found ${messages.length} unread Ticketmaster messages`);
-
-      for (const message of messages) {
-        try {
-          console.log(`Processing message ID: ${message.id}`);
-          const email = await this.gmail.users.messages.get({
-            userId: 'me',
-            id: message.id,
-            format: 'full'
-          });
-
-          // Extract headers
-          const headers = email.data.payload.headers;
-          const toAddress = headers.find((h: any) => h.name === 'To')?.value;
-          const fromAddress = headers.find((h: any) => h.name === 'From')?.value;
-          const subject = headers.find((h: any) => h.name === 'Subject')?.value;
-
-          console.log('Processing email:', {
-            to: toAddress,
-            from: fromAddress,
-            subject: subject
-          });
-
-          if (!toAddress?.endsWith('@seatxfer.com')) {
-            console.log('Skipping non-seatxfer email:', toAddress);
-            continue;
-          }
-
-          // Find associated user
-          const [user] = await db
-            .select()
-            .from(users)
-            .where(eq(users.uniqueEmail, toAddress));
-
-          if (!user) {
-            console.log(`No user found for email: ${toAddress}`);
-            continue;
-          }
-
-          console.log(`Found user for email ${toAddress}:`, user.username);
-
-          // Extract HTML content
-          let emailHtml = '';
-          if (email.data.payload.body?.data) {
-            emailHtml = Buffer.from(email.data.payload.body.data, 'base64').toString();
-          } else if (email.data.payload.parts) {
-            const htmlPart = email.data.payload.parts.find((part: any) => part.mimeType === 'text/html');
-            if (htmlPart?.body?.data) {
-              emailHtml = Buffer.from(htmlPart.body.data, 'base64').toString();
-            }
-          }
-
-          console.log('Extracted HTML content length:', emailHtml.length);
-
-          // Parse tickets from email
-          const tickets = this.parseTicketmasterEmail(emailHtml, toAddress);
-          console.log(`Extracted ${tickets.length} tickets from email:`, tickets);
-
-          // Store each ticket
-          for (const ticket of tickets) {
+      this.lastChecked = new Date();
+      const recentEmails = await this.getRecentEmails();
+      for (const email of recentEmails){
+          if (email.ticketInfo) {
             try {
               const pendingTicket: InsertPendingTicket = {
-                userId: user.id,
-                recipientEmail: toAddress,
-                eventName: ticket.eventName || '',
-                eventDate: ticket.eventDate || new Date().toISOString(),
-                eventTime: ticket.eventTime || '',
-                venue: ticket.venue || '',
-                city: ticket.city || '',
-                state: ticket.state || '',
-                section: ticket.section || '',
-                row: ticket.row || '',
-                seat: ticket.seat || '',
-                emailSubject: subject || '',
-                emailFrom: fromAddress || '',
-                rawEmailData: emailHtml,
-                extractedData: ticket,
+                userId: (await this.getUsernameFromEmail(email.recipientEmail)).id,
+                recipientEmail: email.recipientEmail,
+                eventName: email.ticketInfo.eventName || '',
+                eventDate: email.ticketInfo.eventDate || new Date().toISOString(),
+                eventTime: email.ticketInfo.eventTime || '',
+                venue: email.ticketInfo.venue || '',
+                city: email.ticketInfo.city || '',
+                state: email.ticketInfo.state || '',
+                section: email.ticketInfo.section || '',
+                row: email.ticketInfo.row || '',
+                seat: email.ticketInfo.seat || '',
+                emailSubject: email.subject || '',
+                emailFrom: email.from || '',
+                rawEmailData: '', //Not implemented in new method
+                extractedData: email.ticketInfo,
                 status: 'pending'
               };
 
               await db.insert(pendingTickets).values(pendingTicket);
-              console.log('Successfully created pending ticket for user:', user.username);
+              console.log('Successfully created pending ticket for user:', email.userName);
             } catch (error) {
               console.error('Error inserting pending ticket:', error);
             }
           }
-
-          // Mark email as read
-          await this.gmail.users.messages.modify({
-            userId: 'me',
-            id: message.id,
-            requestBody: { removeLabelIds: ['UNREAD'] }
-          });
-
-          console.log('Marked email as read:', message.id);
-        } catch (error) {
-          console.error('Error processing individual email:', error);
-        }
       }
     } catch (error) {
       console.error('Error scraping tickets:', error);
@@ -297,28 +305,38 @@ export class GmailScraper {
       return authResult; // Return authUrl for the client to handle
     }
 
+    this.isMonitoringActive = true;
     console.log('Starting Gmail monitoring...');
-    await this.scrapeTickets();
-    setInterval(() => this.scrapeTickets(), intervalMs);
+    this.monitoringInterval = setInterval(async () => {
+      await this.scrapeTickets();
+    }, intervalMs);
+  }
+
+  stopMonitoring() {
+    if (this.monitoringInterval) {
+      clearInterval(this.monitoringInterval);
+      this.isMonitoringActive = false;
+      console.log('Gmail monitoring stopped.');
+    }
   }
 }
 
 export async function initGmailScraper() {
-  const scraper = new GmailScraper();
   try {
     console.log('Initializing Gmail scraper...');
+    const scraper = new GmailScraper();
     const authResult = await scraper.authenticate();
+
     if (!authResult.isAuthenticated && authResult.authUrl) {
       console.log('Authentication required. Please visit this URL to authenticate:');
       console.log(authResult.authUrl);
       return { scraper, authUrl: authResult.authUrl };
     } else {
       console.log('Gmail scraper authenticated successfully.');
-      await scraper.startMonitoring();
       return { scraper, authUrl: null };
     }
   } catch (error) {
     console.error('Failed to initialize Gmail scraper:', error);
-    return { scraper, error };
+    return { error };
   }
 }

@@ -20,8 +20,8 @@ interface EmailStatus {
   isConnected: boolean;
   lastChecked: string | null;
   isMonitoring: boolean;
-  authUrl?: string; // Added for Gmail authentication
-  isAuthenticated?: boolean; // Added to track Gmail auth status
+  authUrl?: string;
+  isAuthenticated?: boolean;
   recentEmails: {
     subject: string;
     from: string;
@@ -37,10 +37,6 @@ interface EmailStatus {
       section: string;
       row: string;
       seat: string;
-      price: number | null;
-      sellerInfo: string;
-      transferDetails: string;
-      fullEmailBody: string;
     };
     recipientEmail: string;
     userName: string;
@@ -55,27 +51,41 @@ export default function AdminEmailMonitorPage() {
     return <Redirect to="/dashboard" />;
   }
 
-  const { data: status, isLoading } = useQuery<EmailStatus>({
+  const { data: status, isLoading, refetch } = useQuery<EmailStatus>({
     queryKey: ["/api/admin/email/status"],
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
   const startMonitoringMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("POST", "/api/admin/email/start-monitoring");
+      const response = await apiRequest("POST", "/api/admin/email/start-monitoring");
+      const data = await response.json();
+      if (data.needsAuth) {
+        window.open(data.authUrl, '_blank');
+        throw new Error('Gmail authentication required');
+      }
+      return data;
     },
     onSuccess: () => {
       toast({
         title: "Email Monitoring Started",
         description: "Checking for new ticket emails...",
       });
+      refetch(); // Refresh the status
     },
     onError: (error: Error) => {
-      toast({
-        title: "Monitoring Failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      if (error.message === 'Gmail authentication required') {
+        toast({
+          title: "Authentication Required",
+          description: "Please authenticate with Gmail in the new window",
+        });
+      } else {
+        toast({
+          title: "Monitoring Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     },
   });
 
@@ -124,7 +134,7 @@ export default function AdminEmailMonitorPage() {
                 )}
                 <Button
                   onClick={() => startMonitoringMutation.mutate()}
-                  disabled={startMonitoringMutation.isPending || !status?.isAuthenticated}
+                  disabled={startMonitoringMutation.isPending}
                 >
                   <RefreshCw className={`h-4 w-4 mr-2 ${startMonitoringMutation.isPending ? "animate-spin" : ""}`} />
                   Check New Emails
@@ -158,39 +168,15 @@ export default function AdminEmailMonitorPage() {
                       <TableCell className="font-medium">{email.userName}</TableCell>
                       <TableCell>
                         {email.ticketInfo ? (
-                          <div className="space-y-2">
-                            <div>
-                              <p className="font-medium">{email.ticketInfo.eventName}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {email.ticketInfo.eventDate ?
-                                  new Date(email.ticketInfo.eventDate).toLocaleDateString() :
-                                  'Date pending'
-                                }
-                              </p>
-                              <p className="text-sm text-muted-foreground">{email.ticketInfo.venue}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {email.ticketInfo.city}, {email.ticketInfo.state}
-                              </p>
-                            </div>
-                            <div className="text-sm">
-                              <p><strong>Section:</strong> {email.ticketInfo.section}</p>
-                              <p><strong>Row:</strong> {email.ticketInfo.row}</p>
-                              <p><strong>Seat:</strong> {email.ticketInfo.seat}</p>
-                              {email.ticketInfo.price && (
-                                <p><strong>Price:</strong> ${email.ticketInfo.price.toFixed(2)}</p>
-                              )}
-                            </div>
-                            {email.ticketInfo.sellerInfo && (
-                              <p className="text-sm"><strong>Seller:</strong> {email.ticketInfo.sellerInfo}</p>
-                            )}
-                            {email.ticketInfo.transferDetails && (
-                              <details className="text-sm">
-                                <summary className="cursor-pointer text-primary">Transfer Details</summary>
-                                <p className="mt-2 whitespace-pre-wrap text-muted-foreground">
-                                  {email.ticketInfo.transferDetails}
-                                </p>
-                              </details>
-                            )}
+                          <div>
+                            <p className="font-medium">{email.ticketInfo.eventName}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {new Date(email.ticketInfo.eventDate).toLocaleDateString()}
+                            </p>
+                            <p className="text-sm text-muted-foreground">{email.ticketInfo.venue}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {email.ticketInfo.city}, {email.ticketInfo.state}
+                            </p>
                           </div>
                         ) : (
                           <span className="text-muted-foreground">Processing...</span>

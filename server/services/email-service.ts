@@ -5,6 +5,15 @@ import { db } from '../db';
 import { users } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 
+// Add default email service configuration
+const DEFAULT_EMAIL_CONFIG = {
+  user: process.env.EMAIL_USER || '',
+  password: process.env.EMAIL_PASSWORD || '',
+  host: process.env.EMAIL_HOST || 'imap.gmail.com',
+  port: parseInt(process.env.EMAIL_PORT || '993'),
+  tls: true
+};
+
 type EmailStatus = {
   isConnected: boolean;
   lastChecked: Date | null;
@@ -44,18 +53,24 @@ export class EmailService {
     port: number;
     tls: boolean;
   }): EmailService {
-    if (credentials) {
-      if (EmailService.instance?.monitoringInterval) {
-        clearInterval(EmailService.instance.monitoringInterval);
+    try {
+      if (!EmailService.instance) {
+        EmailService.instance = new EmailService(credentials || DEFAULT_EMAIL_CONFIG);
+      } else if (credentials) {
+        // Update existing instance with new credentials
+        if (EmailService.instance.monitoringInterval) {
+          clearInterval(EmailService.instance.monitoringInterval);
+        }
+        if (EmailService.instance.imap.state === 'authenticated') {
+          EmailService.instance.imap.end();
+        }
+        EmailService.instance = new EmailService(credentials);
       }
-      if (EmailService.instance?.imap.state === 'authenticated') {
-        EmailService.instance.imap.end();
-      }
-      EmailService.instance = new EmailService(credentials);
-    } else if (!EmailService.instance) {
-      throw new Error('Email service not initialized');
+      return EmailService.instance;
+    } catch (error) {
+      console.error('Failed to initialize EmailService:', error);
+      throw new Error('Email service initialization failed');
     }
-    return EmailService.instance;
   }
 
   private constructor(credentials: {
