@@ -64,6 +64,9 @@ app.use((req, res, next) => {
       console.log('- GOOGLE_CLIENT_ID exists:', !!process.env.GOOGLE_CLIENT_ID);
       console.log('- GOOGLE_CLIENT_SECRET exists:', !!process.env.GOOGLE_CLIENT_SECRET);
       console.log('- GOOGLE_TOKEN exists:', !!process.env.GOOGLE_TOKEN);
+      console.log('- REPL_SLUG:', process.env.REPL_SLUG);
+      console.log('- REPL_OWNER:', process.env.REPL_OWNER);
+      console.log('- Server URL:', `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`);
 
       const scraperResult = await initGmailScraper();
       console.log('Gmail scraper initialization result:', 
