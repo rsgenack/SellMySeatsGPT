@@ -5,6 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import AdminNav from "@/components/layout/admin-nav";
 import { Button } from "@/components/ui/button";
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert";
+import {
   Table,
   TableBody,
   TableCell,
@@ -12,7 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { RefreshCw, Circle, Ticket } from "lucide-react";
+import { RefreshCw, Circle, Ticket, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -69,7 +74,6 @@ export default function AdminEmailMonitorPage() {
     },
     onError: (error: Error) => {
       if (error.message.includes('authentication required')) {
-        // Redirect to Gmail setup endpoint
         window.location.href = '/api/admin/gmail/setup';
       } else {
         toast({
@@ -100,6 +104,21 @@ export default function AdminEmailMonitorPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {status?.needsAuth && (
+              <Alert variant="warning" className="mb-6">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Gmail Authentication Required</AlertTitle>
+                <AlertDescription>
+                  The Gmail monitoring system needs to be authenticated. Click the button below to set up Gmail access for the Forwarding@sellmyseats.com account.
+                  <div className="mt-4">
+                    <Button onClick={() => window.location.href = '/api/admin/gmail/setup'}>
+                      Setup Gmail Access
+                    </Button>
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
+
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
@@ -115,11 +134,7 @@ export default function AdminEmailMonitorPage() {
                 )}
               </div>
 
-              {status?.needsAuth ? (
-                <div className="text-sm text-muted-foreground">
-                  Gmail authentication required. Please contact system administrator.
-                </div>
-              ) : (
+              {!status?.needsAuth && (
                 <Button
                   onClick={() => startMonitoringMutation.mutate()}
                   disabled={startMonitoringMutation.isPending}
