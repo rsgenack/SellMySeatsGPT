@@ -10,9 +10,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { User as SelectUser, Ticket } from "@shared/schema";
+import { User as SelectUser, Ticket, Payment } from "@shared/schema";
 import AdminNav from "@/components/layout/admin-nav";
-import { Mail, Users, Ticket as TicketIcon, DollarSign } from "lucide-react";
+import { AnalyticsDashboard } from "@/components/admin/AnalyticsDashboard";
+import { Users, Ticket as TicketIcon, DollarSign } from "lucide-react";
 
 export default function AdminDashboardPage() {
   const { user } = useAuth();
@@ -28,6 +29,10 @@ export default function AdminDashboardPage() {
 
   const { data: tickets = [] } = useQuery<Ticket[]>({
     queryKey: ["/api/admin/tickets"],
+  });
+
+  const { data: payments = [] } = useQuery<Payment[]>({
+    queryKey: ["/api/admin/payments"],
   });
 
   const stats = {
@@ -84,7 +89,7 @@ export default function AdminDashboardPage() {
                   <p className="text-sm font-medium text-muted-foreground">Active Listings</p>
                   <h2 className="text-3xl font-bold">{stats.activeListings}</h2>
                 </div>
-                <Mail className="h-8 w-8 text-muted-foreground" />
+                <TicketIcon className="h-8 w-8 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
@@ -101,6 +106,9 @@ export default function AdminDashboardPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Analytics Dashboard */}
+        <AnalyticsDashboard tickets={tickets} payments={payments} />
 
         {/* Recent Users */}
         <Card>
