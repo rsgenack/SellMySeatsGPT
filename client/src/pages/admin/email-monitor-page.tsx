@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Mail, RefreshCw, Circle } from "lucide-react";
+import { Mail, RefreshCw, Circle, Ticket } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -24,6 +24,16 @@ interface EmailStatus {
     from: string;
     date: string;
     status: 'processed' | 'pending' | 'error';
+    ticketInfo?: {
+      eventName: string;
+      eventDate: string;
+      venue: string;
+      section: string;
+      row: string;
+      seat: string;
+    };
+    recipientEmail: string;
+    userName: string;
   }[];
 }
 
@@ -69,12 +79,12 @@ export default function AdminEmailMonitorPage() {
 
       <AdminNav />
 
-      <div className="container mx-auto py-8 px-4">
-        <Card className="mb-8">
+      <div className="container mx-auto py-8 px-4 space-y-8">
+        <Card>
           <CardHeader>
             <CardTitle>Email Monitoring Status</CardTitle>
             <CardDescription>
-              Monitor incoming ticket emails and their processing status.
+              Monitor incoming ticket transfer emails and their processing status
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -105,8 +115,10 @@ export default function AdminEmailMonitorPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Subject</TableHead>
-                    <TableHead>From</TableHead>
+                    <TableHead>Recipient (@seatxfer.com)</TableHead>
+                    <TableHead>User</TableHead>
+                    <TableHead>Event Details</TableHead>
+                    <TableHead>Ticket Info</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Status</TableHead>
                   </TableRow>
@@ -114,15 +126,42 @@ export default function AdminEmailMonitorPage() {
                 <TableBody>
                   {status?.recentEmails?.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
-                        No recent emails found
+                      <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
+                        No recent ticket transfer emails found
                       </TableCell>
                     </TableRow>
                   )}
                   {status?.recentEmails?.map((email, i) => (
                     <TableRow key={i}>
-                      <TableCell className="font-medium">{email.subject}</TableCell>
-                      <TableCell>{email.from}</TableCell>
+                      <TableCell className="font-mono text-sm">{email.recipientEmail}</TableCell>
+                      <TableCell className="font-medium">{email.userName}</TableCell>
+                      <TableCell>
+                        {email.ticketInfo ? (
+                          <div>
+                            <p className="font-medium">{email.ticketInfo.eventName}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {new Date(email.ticketInfo.eventDate).toLocaleDateString()}
+                            </p>
+                            <p className="text-sm text-muted-foreground">{email.ticketInfo.venue}</p>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">Processing...</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {email.ticketInfo ? (
+                          <div className="flex items-center gap-2">
+                            <Ticket className="h-4 w-4 text-muted-foreground" />
+                            <span>
+                              Section {email.ticketInfo.section},
+                              Row {email.ticketInfo.row},
+                              Seat {email.ticketInfo.seat}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">Pending</span>
+                        )}
+                      </TableCell>
                       <TableCell>{new Date(email.date).toLocaleString()}</TableCell>
                       <TableCell>
                         <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
