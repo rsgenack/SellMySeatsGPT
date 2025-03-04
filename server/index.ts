@@ -59,9 +59,19 @@ app.use((req, res, next) => {
 
     // Initialize Gmail scraper with better error handling
     try {
+      console.log('Starting Gmail scraper initialization...');
+      console.log('Checking environment variables:');
+      console.log('- GOOGLE_CLIENT_ID exists:', !!process.env.GOOGLE_CLIENT_ID);
+      console.log('- GOOGLE_CLIENT_SECRET exists:', !!process.env.GOOGLE_CLIENT_SECRET);
+      console.log('- GOOGLE_TOKEN exists:', !!process.env.GOOGLE_TOKEN);
+
       const scraperResult = await initGmailScraper();
       console.log('Gmail scraper initialization result:', 
         scraperResult ? (scraperResult.authUrl ? 'Authentication needed' : 'Success') : 'Failed');
+
+      if (scraperResult?.error) {
+        console.error('Gmail scraper initialization error details:', scraperResult.error);
+      }
     } catch (error) {
       console.error('Gmail scraper initialization error:', error);
     }

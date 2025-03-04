@@ -20,15 +20,20 @@ export class GmailScraper {
       throw new Error('Google OAuth credentials are required');
     }
 
+    console.log('Initializing Gmail scraper with client ID:', process.env.GOOGLE_CLIENT_ID.substring(0, 8) + '...');
+
     // Use the deployment URL or localhost for development
     const baseUrl = process.env.REPL_SLUG && process.env.REPL_OWNER
       ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`
       : 'http://localhost:5000';
 
+    const redirectUri = `${baseUrl}/api/gmail/callback`;
+    console.log('Using redirect URI:', redirectUri);
+
     this.oauth2Client = new OAuth2Client(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
-      `${baseUrl}/api/gmail/callback`
+      redirectUri
     );
 
     // Try to load existing token
@@ -41,6 +46,8 @@ export class GmailScraper {
       } catch (error) {
         console.error('Error loading stored Gmail credentials:', error);
       }
+    } else {
+      console.log('No existing Gmail token found, authentication will be required');
     }
   }
 
