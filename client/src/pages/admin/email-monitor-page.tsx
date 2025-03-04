@@ -19,7 +19,9 @@ import { apiRequest } from "@/lib/queryClient";
 interface EmailStatus {
   isConnected: boolean;
   lastChecked: string | null;
-  isMonitoring: boolean; // Added
+  isMonitoring: boolean;
+  authUrl?: string; // Added for Gmail authentication
+  isAuthenticated?: boolean; // Added to track Gmail auth status
   recentEmails: {
     subject: string;
     from: string;
@@ -28,10 +30,10 @@ interface EmailStatus {
     ticketInfo?: {
       eventName: string;
       eventDate: string;
-      eventTime: string; // Added
+      eventTime: string;
       venue: string;
-      city: string; // Added
-      state: string; // Added
+      city: string;
+      state: string;
       section: string;
       row: string;
       seat: string;
@@ -110,13 +112,24 @@ export default function AdminEmailMonitorPage() {
                   </span>
                 )}
               </div>
-              <Button
-                onClick={() => startMonitoringMutation.mutate()}
-                disabled={startMonitoringMutation.isPending}
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${startMonitoringMutation.isPending ? "animate-spin" : ""}`} />
-                Check New Emails
-              </Button>
+              <div className="flex items-center gap-4">
+                {status?.authUrl && !status?.isAuthenticated && (
+                  <Button
+                    variant="outline"
+                    onClick={() => window.open(status.authUrl, '_blank')}
+                  >
+                    <Mail className="h-4 w-4 mr-2" />
+                    Authenticate Gmail
+                  </Button>
+                )}
+                <Button
+                  onClick={() => startMonitoringMutation.mutate()}
+                  disabled={startMonitoringMutation.isPending || !status?.isAuthenticated}
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${startMonitoringMutation.isPending ? "animate-spin" : ""}`} />
+                  Check New Emails
+                </Button>
+              </div>
             </div>
 
             <div className="rounded-md border">
