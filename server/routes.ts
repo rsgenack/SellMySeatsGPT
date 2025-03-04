@@ -323,7 +323,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/admin/gmail/setup", requireAdmin, async (req, res) => {
     try {
       if (!scraper) {
-        return res.status(500).json({ 
+        return res.status(500).json({
           error: "Gmail scraper not initialized",
           details: "Please try again in a few moments"
         });
@@ -334,7 +334,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Generate auth URL and redirect directly to Google OAuth
         res.redirect(authResult.authUrl);
       } else {
-        res.json({ 
+        res.json({
           status: "success",
           message: "Gmail already authenticated"
         });
@@ -367,7 +367,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         <html>
           <body>
             <h1>Gmail Authentication Failed</h1>
-            <p>Error: ${error.message}</p>
+            <p>Error: ${error instanceof Error ? error.message : 'Unknown error'}</p>
             <p>Please close this window and try again.</p>
           </body>
         </html>
@@ -376,11 +376,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
 
-  // Add email monitoring endpoint
   app.post("/api/admin/email/start-monitoring", requireAdmin, async (req, res) => {
     try {
       if (!scraper) {
-        return res.status(500).json({ 
+        return res.status(500).json({
           error: "Gmail scraper not initialized",
           details: "Please try again in a few moments"
         });
@@ -398,25 +397,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       await scraper.startMonitoring();
 
-      res.json({ 
+      res.json({
         message: "Email monitoring started successfully",
         isAuthenticated: true,
         isMonitoring: true
       });
     } catch (error) {
       console.error("Error in email monitoring:", error);
-      res.status(500).json({ 
+      res.status(500).json({
         error: "Failed to start email monitoring",
         details: error instanceof Error ? error.message : "Unknown error"
       });
     }
   });
 
-  // Add email status endpoint
   app.get("/api/admin/email/status", requireAdmin, async (req, res) => {
     try {
       if (!scraper) {
-        return res.status(500).json({ 
+        return res.status(500).json({
           error: "Gmail scraper not initialized",
           isConnected: false,
           isMonitoring: false
@@ -435,7 +433,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Error getting email status:", error);
-      res.status(500).json({ 
+      res.status(500).json({
         error: "Failed to get email status",
         details: error instanceof Error ? error.message : "Unknown error",
         isConnected: false,
