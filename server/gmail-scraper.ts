@@ -22,11 +22,7 @@ export class GmailScraper {
 
     console.log('Initializing Gmail scraper with client ID:', process.env.GOOGLE_CLIENT_ID.substring(0, 8) + '...');
 
-    // Use the deployment URL or localhost for development
-    const baseUrl = process.env.REPL_SLUG && process.env.REPL_OWNER
-      ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`
-      : 'http://localhost:5000';
-
+    const baseUrl = 'https://7611d552-4571-448c-959b-3aab7013a692-00-nb13ztx8m8ho.picard.replit.dev';
     const redirectUri = `${baseUrl}/api/gmail/callback`;
     console.log('Using redirect URI:', redirectUri);
 
