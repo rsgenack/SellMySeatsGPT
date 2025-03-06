@@ -329,6 +329,7 @@ export class GmailScraper {
 
   async handleAuthCallback(code: string): Promise<void> {
     try {
+      console.log('Handling auth callback with code');
       const { tokens } = await this.oauth2Client.getToken(code);
       this.oauth2Client.setCredentials(tokens);
       this.gmail = google.gmail({ version: 'v1', auth: this.oauth2Client });
