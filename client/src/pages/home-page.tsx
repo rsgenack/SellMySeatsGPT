@@ -79,19 +79,38 @@ export default function HomePage() {
 
         <section className="py-16 px-4">
           <div className="container mx-auto">
-            <h2 className="text-3xl font-bold text-center mb-12">Popular Venues</h2>
+            <h2 className="text-3xl font-bold text-center mb-12">Clients We Support</h2>
             <div className="grid md:grid-cols-3 gap-6">
               {[
-                "https://images.unsplash.com/photo-1492684223066-81342ee5ff30",
-                "https://images.unsplash.com/photo-1511795409834-ef04bbd61622",
-                "https://images.unsplash.com/photo-1464047736614-af63643285bf",
-              ].map((image, i) => (
-                <img
-                  key={i}
-                  src={image}
-                  alt="Venue"
-                  className="w-full h-64 object-cover rounded-lg"
-                />
+                {
+                  image: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30",
+                  title: "Regular Fans [UPDATE]",
+                  description: "Perfect for occasional event-goers looking to sell their tickets"
+                },
+                {
+                  image: "https://images.unsplash.com/photo-1511795409834-ef04bbd61622",
+                  title: "Season Ticket Holders",
+                  description: "Manage and sell your season tickets with ease"
+                },
+                {
+                  image: "https://images.unsplash.com/photo-1464047736614-af63643285bf",
+                  title: "Corporate Clients",
+                  description: "Solutions for businesses with bulk ticket holdings"
+                },
+              ].map((client, i) => (
+                <Link key={i} href="/auth">
+                  <div className="group cursor-pointer">
+                    <div className="overflow-hidden rounded-lg transition-transform duration-300 transform group-hover:scale-105">
+                      <img
+                        src={client.image}
+                        alt={client.title}
+                        className="w-full h-64 object-cover rounded-lg transition-transform duration-300 transform group-hover:scale-110"
+                      />
+                    </div>
+                    <h3 className="text-xl font-semibold mt-4 mb-2">{client.title}</h3>
+                    <p className="text-muted-foreground text-sm">{client.description}</p>
+                  </div>
+                </Link>
               ))}
             </div>
           </div>
