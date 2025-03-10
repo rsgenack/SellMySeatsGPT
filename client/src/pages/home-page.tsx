@@ -100,12 +100,15 @@ export default function HomePage() {
               ].map((client, i) => (
                 <Link key={i} href="/auth">
                   <div className="group cursor-pointer">
-                    <div className="overflow-hidden rounded-lg transition-transform duration-300 transform group-hover:scale-105">
+                    <div className="relative overflow-hidden rounded-lg transition-transform duration-300 transform group-hover:scale-105">
                       <img
                         src={client.image}
                         alt={client.title}
                         className="w-full h-64 object-cover rounded-lg transition-transform duration-300 transform group-hover:scale-110"
                       />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                        <span className="text-white text-lg font-serif tracking-wide">Learn More</span>
+                      </div>
                     </div>
                     <h3 className="text-xl font-semibold mt-4 mb-2">{client.title}</h3>
                     <p className="text-muted-foreground text-sm">{client.description}</p>
