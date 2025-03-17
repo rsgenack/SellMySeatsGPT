@@ -18,7 +18,6 @@ import { z } from "zod";
 import { useLocation } from "wouter";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
-import { Confetti } from "@/components/ui/confetti";
 
 // Create a simplified schema for registration that matches our backend expectations
 const registerSchema = z.object({
@@ -158,7 +157,6 @@ function LoginForm() {
 
 function RegisterForm() {
   const { registerMutation } = useAuth();
-  const [showConfetti, setShowConfetti] = useState(false);
   const form = useForm<RegisterData>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
@@ -168,79 +166,63 @@ function RegisterForm() {
     },
   });
 
-  const onSubmit = async (data: RegisterData) => {
-    try {
-      const result = await registerMutation.mutateAsync(data);
-      if (result) {
-        setShowConfetti(true);
-        // Keep confetti visible for 3 seconds even after redirect
-        setTimeout(() => setShowConfetti(false), 3000);
-      }
-    } catch (error) {
-      console.error('Registration error:', error);
-    }
-  };
-
   return (
-    <>
-      {showConfetti && <Confetti duration={3000} />}
-      <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="space-y-4 mt-4"
+    <Form {...form}>
+      <form
+        onSubmit={form.handleSubmit((data) => registerMutation.mutate(data))}
+        className="space-y-4 mt-4"
+      >
+        <FormField
+          control={form.control}
+          name="username"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Username</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input type="email" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Password</FormLabel>
+              <FormControl>
+                <Input type="password" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={registerMutation.isPending}
         >
-          <FormField
-            control={form.control}
-            name="username"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Username</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input type="email" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Password</FormLabel>
-                <FormControl>
-                  <Input type="password" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={registerMutation.isPending}
-          >
-            {registerMutation.isPending && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            )}
-            Register
-          </Button>
-        </form>
-      </Form>
-    </>
+          {registerMutation.isPending && (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          )}
+          Register
+        </Button>
+      </form>
+    </Form>
   );
 }
 
