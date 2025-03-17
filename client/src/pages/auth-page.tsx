@@ -170,8 +170,12 @@ function RegisterForm() {
 
   const onSubmit = async (data: RegisterData) => {
     try {
-      await registerMutation.mutateAsync(data);
-      setShowConfetti(true);
+      const result = await registerMutation.mutateAsync(data);
+      if (result) {
+        setShowConfetti(true);
+        // Keep confetti visible for 3 seconds even after redirect
+        setTimeout(() => setShowConfetti(false), 3000);
+      }
     } catch (error) {
       console.error('Registration error:', error);
     }
@@ -179,7 +183,7 @@ function RegisterForm() {
 
   return (
     <>
-      {showConfetti && <Confetti />}
+      {showConfetti && <Confetti duration={3000} />}
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
