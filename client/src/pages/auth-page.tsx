@@ -17,6 +17,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useLocation } from "wouter";
 import { Loader2 } from "lucide-react";
+import { useState } from "react";
 
 // Create a simplified schema for registration that matches our backend expectations
 const registerSchema = z.object({
@@ -227,6 +228,7 @@ function RegisterForm() {
 
 function ResetPasswordForm() {
   const { resetPasswordMutation } = useAuth();
+  const [resetToken, setResetToken] = useState<string | null>(null);
   const form = useForm<ResetPasswordData>({
     resolver: zodResolver(resetPasswordSchema),
     defaultValues: {
@@ -234,10 +236,42 @@ function ResetPasswordForm() {
     },
   });
 
+  const onSubmit = async (data: ResetPasswordData) => {
+    try {
+      const response = await resetPasswordMutation.mutateAsync(data);
+      setResetToken(response.resetToken);
+    } catch (error) {
+      console.error('Reset password error:', error);
+    }
+  };
+
+  if (resetToken) {
+    return (
+      <div className="space-y-4 mt-4">
+        <div className="p-4 bg-muted rounded-lg">
+          <h4 className="font-medium mb-2">Reset Token Generated</h4>
+          <p className="text-sm text-muted-foreground mb-2">
+            In production, this token would be sent via email. For testing, you can use this token:
+          </p>
+          <code className="block p-2 bg-background rounded border text-sm break-all">
+            {resetToken}
+          </code>
+        </div>
+        <Button
+          className="w-full"
+          variant="outline"
+          onClick={() => setResetToken(null)}
+        >
+          Request New Token
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <Form {...form}>
       <form
-        onSubmit={form.handleSubmit((data) => resetPasswordMutation.mutate(data))}
+        onSubmit={form.handleSubmit(onSubmit)}
         className="space-y-4 mt-4"
       >
         <FormField

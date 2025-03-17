@@ -15,7 +15,7 @@ type AuthContextType = {
   loginMutation: UseMutationResult<SelectUser, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
   registerMutation: UseMutationResult<SelectUser, Error, InsertUser>;
-  resetPasswordMutation: UseMutationResult<void, Error, ResetPasswordData>;
+  resetPasswordMutation: UseMutationResult<{ resetToken: string }, Error, ResetPasswordData>;
 };
 
 type LoginData = {
@@ -79,11 +79,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!res.ok) {
         throw new Error("Failed to initiate password reset");
       }
+      return res.json();
     },
     onSuccess: () => {
       toast({
-        title: "Password Reset Email Sent",
-        description: "Check your email for password reset instructions.",
+        title: "Password Reset Token Generated",
+        description: "Please use the provided token to reset your password.",
       });
     },
     onError: (error: Error) => {
