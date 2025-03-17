@@ -10,11 +10,24 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Add CORS and error handling middleware
+// Add CORS and security middleware with support for multiple domains
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
+  // Allow both Replit domains and custom domains
+  const allowedOrigins = [
+    process.env.REPLIT_DOMAIN,  // Replit domain
+    process.env.CUSTOM_DOMAIN,  // Custom domain
+    process.env.HEROKU_APP_URL, // Heroku app URL
+    'http://localhost:5000'     // Local development
+  ].filter(Boolean); // Remove undefined values
+
+  const origin = req.headers.origin;
+  if (origin && allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+  }
+
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
 
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
@@ -66,9 +79,6 @@ app.use((req, res, next) => {
       console.log('- GOOGLE_CLIENT_ID exists:', !!process.env.GOOGLE_CLIENT_ID);
       console.log('- GOOGLE_CLIENT_SECRET exists:', !!process.env.GOOGLE_CLIENT_SECRET);
       console.log('- GOOGLE_TOKEN exists:', !!process.env.GOOGLE_TOKEN);
-      console.log('- REPL_SLUG:', process.env.REPL_SLUG);
-      console.log('- REPL_OWNER:', process.env.REPL_OWNER);
-      console.log('- Server URL:', `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`);
 
       const scraperResult = await initGmailScraper();
       console.log('Gmail scraper initialization result:', 
@@ -81,8 +91,8 @@ app.use((req, res, next) => {
       console.error('Gmail scraper initialization error:', error);
     }
 
-    // ALWAYS serve the app on port 5000 as required
-    const port = 5000;
+    // Use PORT from environment variable (for Heroku) or default to 5000 (for Replit)
+    const port = process.env.PORT || 5000;
     server.listen({
       port,
       host: "0.0.0.0",
