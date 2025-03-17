@@ -11,6 +11,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -52,19 +53,15 @@ export default function AuthPage() {
         <Card className="w-full max-w-md">
           <CardContent className="pt-6">
             <Tabs defaultValue="login">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="login">Login</TabsTrigger>
                 <TabsTrigger value="register">Register</TabsTrigger>
-                <TabsTrigger value="reset">Reset Password</TabsTrigger>
               </TabsList>
               <TabsContent value="login">
                 <LoginForm />
               </TabsContent>
               <TabsContent value="register">
                 <RegisterForm />
-              </TabsContent>
-              <TabsContent value="reset">
-                <ResetPasswordForm />
               </TabsContent>
             </Tabs>
           </CardContent>
@@ -137,6 +134,21 @@ function LoginForm() {
           )}
           Login
         </Button>
+        <div className="text-center mt-2">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="link" className="text-sm text-muted-foreground hover:text-primary">
+                Forgot Password?
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Reset Password</DialogTitle>
+              </DialogHeader>
+              <ResetPasswordForm />
+            </DialogContent>
+          </Dialog>
+        </div>
       </form>
     </Form>
   );
