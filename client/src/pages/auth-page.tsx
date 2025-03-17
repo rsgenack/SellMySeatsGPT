@@ -25,15 +25,20 @@ const registerSchema = z.object({
 });
 
 const loginSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
+  email: z.string().email("Invalid email format"),
   password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+const resetPasswordSchema = z.object({
+  email: z.string().email("Invalid email format"),
 });
 
 type RegisterData = z.infer<typeof registerSchema>;
 type LoginData = z.infer<typeof loginSchema>;
+type ResetPasswordData = z.infer<typeof resetPasswordSchema>;
 
 export default function AuthPage() {
-  const { user, loginMutation, registerMutation } = useAuth();
+  const { user, loginMutation, registerMutation, resetPasswordMutation } = useAuth();
   const [, setLocation] = useLocation();
 
   if (user) {
@@ -47,15 +52,19 @@ export default function AuthPage() {
         <Card className="w-full max-w-md">
           <CardContent className="pt-6">
             <Tabs defaultValue="login">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="login">Login</TabsTrigger>
                 <TabsTrigger value="register">Register</TabsTrigger>
+                <TabsTrigger value="reset">Reset Password</TabsTrigger>
               </TabsList>
               <TabsContent value="login">
                 <LoginForm />
               </TabsContent>
               <TabsContent value="register">
                 <RegisterForm />
+              </TabsContent>
+              <TabsContent value="reset">
+                <ResetPasswordForm />
               </TabsContent>
             </Tabs>
           </CardContent>
@@ -81,7 +90,7 @@ function LoginForm() {
   const form = useForm<LoginData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      username: "",
+      email: "",
       password: "",
     },
   });
@@ -94,12 +103,12 @@ function LoginForm() {
       >
         <FormField
           control={form.control}
-          name="username"
+          name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Username</FormLabel>
+              <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input type="email" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -198,6 +207,49 @@ function RegisterForm() {
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           )}
           Register
+        </Button>
+      </form>
+    </Form>
+  );
+}
+
+function ResetPasswordForm() {
+  const { resetPasswordMutation } = useAuth();
+  const form = useForm<ResetPasswordData>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: {
+      email: "",
+    },
+  });
+
+  return (
+    <Form {...form}>
+      <form
+        onSubmit={form.handleSubmit((data) => resetPasswordMutation.mutate(data))}
+        className="space-y-4 mt-4"
+      >
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input type="email" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={resetPasswordMutation.isPending}
+        >
+          {resetPasswordMutation.isPending && (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          )}
+          Reset Password
         </Button>
       </form>
     </Form>

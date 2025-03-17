@@ -8,8 +8,17 @@ export const users = pgTable('users', {
   password: text('password').notNull(),
   email: text('email').notNull(),
   uniqueEmail: varchar('uniqueEmail', { length: 255 }).notNull().unique(),
-  isAdmin: boolean('isAdmin').notNull().default(false), // Changed to be non-nullable
+  isAdmin: boolean('isAdmin').notNull().default(false),
   createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const passwordResetTokens = pgTable('password_reset_tokens', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id).notNull(),
+  token: text('token').notNull().unique(),
+  expiresAt: timestamp('expires_at').notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+  usedAt: timestamp('used_at'),
 });
 
 export const pendingTickets = pgTable('pendingTickets', {
@@ -68,6 +77,12 @@ export const insertUserSchema = createInsertSchema(users, {
   email: z.string().email("Invalid email format")
 });
 
+export const insertPasswordResetTokenSchema = createInsertSchema(passwordResetTokens, {
+  token: z.string(),
+  expiresAt: z.date(),
+  userId: z.number(),
+});
+
 export const insertTicketSchema = createInsertSchema(tickets).extend({
   eventName: z.string().min(1, "Event name is required"),
   eventDate: z.date(),
@@ -83,6 +98,8 @@ export const insertPaymentSchema = createInsertSchema(payments);
 // Type definitions
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
+export type InsertPasswordResetToken = typeof passwordResetTokens.$inferInsert;
 export type PendingTicket = typeof pendingTickets.$inferSelect;
 export type InsertPendingTicket = typeof pendingTickets.$inferInsert;
 export type Ticket = typeof tickets.$inferSelect;
