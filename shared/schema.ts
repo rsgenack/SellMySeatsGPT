@@ -1,4 +1,4 @@
-import { pgTable, varchar, text, timestamp, serial, integer, boolean, jsonb } from 'drizzle-orm/pg-core';
+import { pgTable, varchar, text, timestamp, serial, integer, boolean, jsonb, index } from 'drizzle-orm/pg-core';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
@@ -40,7 +40,10 @@ export const pendingTickets = pgTable('pendingTickets', {
   extractedData: jsonb('extracted_data'),
   status: text('status').default('pending').notNull(),
   createdAt: timestamp('created_at').defaultNow(),
-});
+}, (table) => ({
+  userIdIdx: index('pending_tickets_user_id_idx').on(table.userId),
+  statusIdx: index('pending_tickets_status_idx').on(table.status),
+}));
 
 export const session = pgTable('session', {
   sid: varchar('sid', { length: 255 }).notNull().primaryKey(),
@@ -60,14 +63,18 @@ export const tickets = pgTable('tickets', {
   askingPrice: integer('asking_price').default(0),
   status: text('status').default('pending').notNull(),
   createdAt: timestamp('created_at').defaultNow(),
-});
+}, (table) => ({
+  userIdIdx: index('tickets_user_id_idx').on(table.userId),
+}));
 
 export const payments = pgTable('payments', {
   id: serial('id').primaryKey(),
   userId: integer('user_id').references(() => users.id).notNull(),
   amount: integer('amount').notNull(),
   createdAt: timestamp('created_at').defaultNow(),
-});
+}, (table) => ({
+  userIdIdx: index('payments_user_id_idx').on(table.userId),
+}));
 
 // Create Zod schemas for validation
 export const insertUserSchema = createInsertSchema(users, {
@@ -83,9 +90,9 @@ export const insertPasswordResetTokenSchema = createInsertSchema(passwordResetTo
   userId: z.number(),
 });
 
-export const insertTicketSchema = createInsertSchema(tickets).extend({
+export const insertTicketSchema = createInsertSchema(tickets, {
   eventName: z.string().min(1, "Event name is required"),
-  eventDate: z.date(),
+  eventDate: z.date().optional(),
   venue: z.string().optional(),
   section: z.string().optional(),
   row: z.string().optional(),

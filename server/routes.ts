@@ -155,22 +155,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/gmail/status", requireAdmin, async (req, res) => {
-    try {
-      const authResult = await scraper!.authenticate();
-      res.json({
-        isAuthenticated: authResult.isAuthenticated,
-        authUrl: authResult.authUrl,
-        message: authResult.authUrl
-          ? 'Please visit the following URL to authenticate Gmail access:'
-          : 'Gmail scraper is authenticated and monitoring for ticket emails'
-      });
-    } catch (error) {
-      console.error("Gmail status check error:", error);
-      res.status(500).json({ error: "Failed to check Gmail status" });
-    }
-  });
-
   app.get("/api/tickets", async (req, res) => {
     if (!req.isAuthenticated()) {
       console.log('[Routes] Unauthenticated request to /api/tickets');
@@ -320,9 +304,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Add Gmail OAuth setup endpoint for admin
-  app.get("/api/admin/gmail/setup", requireAdmin, async (req, res) => {
+  app.get("/api/admin/gmail/setup", async (req, res) => {
     try {
       if (!scraper) {
+        console.error('[Routes] Gmail scraper not initialized');
         return res.status(500).json({
           error: "Gmail scraper not initialized",
           details: "Please try again in a few moments"
@@ -331,16 +316,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const authResult = await scraper.authenticate();
       if (!authResult.isAuthenticated) {
-        // Generate auth URL and redirect directly to Google OAuth
-        res.redirect(authResult.authUrl);
+        // Return the auth URL as JSON instead of redirecting
+        console.log('[Routes] Gmail authentication required, returning auth URL');
+        return res.json({
+          needsAuth: true,
+          authUrl: authResult.authUrl,
+          message: "Please visit the following URL to authenticate Gmail access"
+        });
       } else {
-        res.json({
+        console.log('[Routes] Gmail already authenticated');
+        return res.json({
           status: "success",
           message: "Gmail already authenticated"
         });
       }
     } catch (error) {
-      console.error("Error setting up Gmail:", error);
+      console.error("[Routes] Error setting up Gmail:", error);
       res.status(500).json({ error: "Failed to setup Gmail integration" });
     }
   });
@@ -348,33 +339,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update the callback handler to be more robust
   app.get("/api/gmail/callback", async (req, res) => {
     try {
+      console.log('[Routes] Received Gmail callback with query:', req.query);
       if (!scraper) {
         throw new Error('Gmail scraper not initialized');
       }
 
-      const { code } = req.query;
+      // Validate the state parameter
+      const state = req.query.state as string;
+      if (state !== 'gmail_auth') {
+        throw new Error('Invalid state parameter');
+      }
+
+      // Validate the code parameter
+      const code = req.query.code as string;
       if (!code || typeof code !== 'string') {
-        throw new Error('Invalid authorization code');
+        throw new Error('Invalid or missing authorization code');
       }
 
       await scraper.handleAuthCallback(code);
 
       // After successful auth, redirect to admin email monitor page
+      console.log('[Routes] Gmail callback successful, redirecting to /admin/email-monitor');
       res.redirect('/admin/email-monitor');
     } catch (error) {
-      console.error('Error handling Gmail callback:', error);
-      res.status(500).send(`
-        <html>
-          <body>
-            <h1>Gmail Authentication Failed</h1>
-            <p>Error: ${error instanceof Error ? error.message : 'Unknown error'}</p>
-            <p>Please close this window and try again.</p>
-          </body>
-        </html>
-      `);
+      console.error('[Routes] Error handling Gmail callback:', error);
+      res.status(500).json({
+        error: "Failed to handle Gmail callback",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
     }
   });
-
 
   app.post("/api/admin/email/start-monitoring", requireAdmin, async (req, res) => {
     try {
@@ -403,7 +397,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isMonitoring: true
       });
     } catch (error) {
-      console.error("Error in email monitoring:", error);
+      console.error("[Routes] Error in email monitoring:", error);
       res.status(500).json({
         error: "Failed to start email monitoring",
         details: error instanceof Error ? error.message : "Unknown error"
@@ -432,7 +426,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         recentEmails: await scraper.getRecentEmails()
       });
     } catch (error) {
-      console.error("Error getting email status:", error);
+      console.error("[Routes] Error getting email status:", error);
       res.status(500).json({
         error: "Failed to get email status",
         details: error instanceof Error ? error.message : "Unknown error",
@@ -441,7 +435,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
-
 
   const httpServer = createServer(app);
   return httpServer;

@@ -22,7 +22,7 @@ export class GmailScraper {
 
     console.log('Initializing Gmail scraper with client ID:', process.env.GOOGLE_CLIENT_ID.substring(0, 8) + '...');
 
-    const baseUrl = 'https://7611d552-4571-448c-959b-3aab7013a692-00-nb13ztx8m8ho.picard.replit.dev';
+    const baseUrl = 'https://api.sellmyseats.com';
     const redirectUri = `${baseUrl}/api/gmail/callback`;
     console.log('Using redirect URI:', redirectUri);
 
@@ -32,18 +32,24 @@ export class GmailScraper {
       redirectUri
     );
 
-    // Try to load existing token
-    const token = process.env.GOOGLE_TOKEN;
-    if (token) {
-      try {
-        this.oauth2Client.setCredentials(JSON.parse(token));
+    // Try to load existing token from Replit Secrets
+    this.loadToken();
+  }
+
+  // Load token from Replit Secrets
+  private loadToken(): void {
+    try {
+      const token = process.env.GOOGLE_TOKEN;
+      if (token) {
+        const parsedToken = JSON.parse(token);
+        this.oauth2Client.setCredentials(parsedToken);
         this.gmail = google.gmail({ version: 'v1', auth: this.oauth2Client });
-        console.log('Successfully loaded existing Gmail credentials');
-      } catch (error) {
-        console.error('Error loading stored Gmail credentials:', error);
+        console.log('Successfully loaded Gmail token from Replit Secrets');
+      } else {
+        console.log('No Gmail token found in Replit Secrets, authentication will be required');
       }
-    } else {
-      console.log('No existing Gmail token found, authentication will be required');
+    } catch (error) {
+      console.error('Error loading token from Replit Secrets:', error.message);
     }
   }
 
@@ -62,15 +68,15 @@ export class GmailScraper {
         return [];
       }
 
-      console.log(`Checking emails for catchall address: ${CATCHALL_EMAIL}`);
+      console.log(`Checking all recent emails in inbox`);
       const response = await this.gmail.users.messages.list({
         userId: 'me',
-        q: `to:${CATCHALL_EMAIL}`,
+        q: '',
         maxResults: 20
       });
 
       const messages = response.data.messages || [];
-      console.log(`Found ${messages.length} messages for catchall address`);
+      console.log(`Found ${messages.length} recent messages`);
       const recentEmails = [];
 
       for (const message of messages) {
@@ -86,13 +92,12 @@ export class GmailScraper {
         const subject = headers.find((h: any) => h.name === 'Subject')?.value;
         const date = headers.find((h: any) => h.name === 'Date')?.value;
 
-        // Extract forwarded recipient if it's a forwarded email
-        const originalRecipient = this.extractOriginalRecipient(email.data.payload);
-        const recipientEmail = originalRecipient || toAddress;
+        // Extract the recipient email (should be a @seatxfer.com address)
+        const recipientEmail = this.extractOriginalRecipient(email.data.payload) || toAddress;
 
         console.log('Processing email:', {
           to: toAddress,
-          originalRecipient,
+          recipientEmail,
           from: fromAddress,
           subject,
           date
@@ -108,7 +113,7 @@ export class GmailScraper {
           }
         }
 
-        // Only process if we can identify the original @seatxfer.com recipient
+        // Only process if we can identify the @seatxfer.com recipient
         if (recipientEmail?.endsWith('@seatxfer.com')) {
           const ticketInfo = this.parseTicketmasterEmail(emailHtml, recipientEmail);
 
@@ -120,7 +125,7 @@ export class GmailScraper {
               date: new Date(date).toISOString(),
               status: 'pending',
               recipientEmail,
-              userName: await this.getUsernameFromEmail(recipientEmail),
+              userName: await this.getUsernameFromEmail(recipientEmail).then(user => user?.username || 'Unknown User'),
               ticketInfo: ticketInfo[0]
             });
           }
@@ -135,36 +140,55 @@ export class GmailScraper {
   }
 
   private extractOriginalRecipient(payload: any): string | null {
-    // Try to find the original recipient from email headers or body
-    // This is needed when emails are forwarded to the catchall address
     try {
-      const headers = payload.headers;
-      // Check common forwarded email headers
+      const headers = payload.headers || [];
+      // Check additional headers for forwarded emails
       const originalTo = headers.find((h: any) =>
         h.name === 'X-Original-To' ||
         h.name === 'Delivered-To' ||
-        h.name === 'X-Forwarded-To'
+        h.name === 'X-Forwarded-To' ||
+        h.name === 'To' ||
+        h.name === 'Original-To'
       )?.value;
 
       if (originalTo?.endsWith('@seatxfer.com')) {
         return originalTo;
       }
 
-      // If not found in headers, try to parse from email body
+      // Check Received headers for the original recipient
+      const receivedHeaders = headers.filter((h: any) => h.name === 'Received');
+      for (const header of receivedHeaders) {
+        const match = header.value?.match(/[a-zA-Z0-9._%+-]+@seatxfer\.com/g);
+        if (match && match.length > 0) {
+          return match[0];
+        }
+      }
+
       let emailBody = '';
       if (payload.body?.data) {
         emailBody = Buffer.from(payload.body.data, 'base64').toString();
       } else if (payload.parts) {
         const textPart = payload.parts.find((part: any) => part.mimeType === 'text/plain');
+        const htmlPart = payload.parts.find((part: any) => part.mimeType === 'text/html');
         if (textPart?.body?.data) {
           emailBody = Buffer.from(textPart.body.data, 'base64').toString();
+        } else if (htmlPart?.body?.data) {
+          emailBody = Buffer.from(htmlPart.body.data, 'base64').toString();
         }
       }
 
-      // Look for email addresses ending with @seatxfer.com in the body
+      // Look for @seatxfer.com in the body or subject
       const matches = emailBody.match(/[a-zA-Z0-9._%+-]+@seatxfer\.com/g);
       if (matches && matches.length > 0) {
         return matches[0];
+      }
+
+      const subjectHeader = headers.find((h: any) => h.name === 'Subject')?.value;
+      if (subjectHeader) {
+        const subjectMatches = subjectHeader.match(/[a-zA-Z0-9._%+-]+@seatxfer\.com/g);
+        if (subjectMatches && subjectMatches.length > 0) {
+          return subjectMatches[0];
+        }
       }
 
       return null;
@@ -179,13 +203,11 @@ export class GmailScraper {
     const doc = dom.window.document;
     const tickets: Partial<InsertPendingTicket>[] = [];
 
-    // Extract event name (first p tag after h1)
     const eventNameElement = Array.from(doc.getElementsByTagName('p'))
       .find(p => p instanceof HTMLParagraphElement &&
         !p.textContent?.toLowerCase().includes('transfer'));
     const eventName = eventNameElement?.textContent?.trim() || 'Unknown Event';
 
-    // Extract date and time
     const dateTimeElement = Array.from(doc.getElementsByTagName('p'))
       .find(p => p instanceof HTMLParagraphElement &&
         p.textContent?.includes('@'));
@@ -206,7 +228,6 @@ export class GmailScraper {
       }
     }
 
-    // Extract venue, city, and state
     const locationElement = Array.from(doc.getElementsByTagName('p'))
       .find(p => p instanceof HTMLParagraphElement &&
         p.textContent?.includes(','));
@@ -224,7 +245,6 @@ export class GmailScraper {
       }
     }
 
-    // Extract seating information
     const seatingInfos = Array.from(doc.getElementsByTagName('p'))
       .filter(p => p instanceof HTMLParagraphElement &&
         (p.textContent?.includes('Section') ||
@@ -287,24 +307,30 @@ export class GmailScraper {
     return tickets;
   }
 
-  async getUsernameFromEmail(email: string): Promise<string> {
+  async getUsernameFromEmail(email: string): Promise<{ id: number; username: string } | null> {
     try {
       const [user] = await db
         .select()
         .from(users)
         .where(eq(users.uniqueEmail, email));
-      return user?.username || 'Unknown User';
+      return user ? { id: user.id, username: user.username } : null;
     } catch (error) {
-      console.error('Error getting username:', error);
-      return 'Unknown User';
+      console.error('Error getting user by email:', error);
+      return null;
     }
   }
 
   async authenticate(): Promise<{ isAuthenticated: boolean; authUrl?: string }> {
     try {
-      const token = process.env.GOOGLE_TOKEN;
-      if (token) {
-        this.oauth2Client.setCredentials(JSON.parse(token));
+      if (this.oauth2Client.credentials && this.oauth2Client.credentials.access_token) {
+        if (this.oauth2Client.credentials.expiry_date && this.oauth2Client.credentials.expiry_date <= Date.now()) {
+          console.log('Token expired, refreshing...');
+          await this.oauth2Client.refreshAccessToken();
+          const newTokens = this.oauth2Client.credentials;
+          console.log('New token obtained after refresh:', newTokens);
+          console.log('Please manually update the GOOGLE_TOKEN secret in Replit Secrets with the following value:');
+          console.log(JSON.stringify(newTokens));
+        }
         this.gmail = google.gmail({ version: 'v1', auth: this.oauth2Client });
         return { isAuthenticated: true };
       }
@@ -313,7 +339,7 @@ export class GmailScraper {
         access_type: 'offline',
         scope: SCOPES,
         prompt: 'consent',
-        state: 'gmail_auth' // Optional: Add state for security
+        state: 'gmail_auth'
       });
       console.log('Please authorize the Gmail API by visiting this URL:', authUrl);
       return { isAuthenticated: false, authUrl };
@@ -325,15 +351,17 @@ export class GmailScraper {
 
   async handleAuthCallback(code: string): Promise<void> {
     try {
-      console.log('Handling auth callback with code');
+      console.log('Handling auth callback with code:', code);
       const { tokens } = await this.oauth2Client.getToken(code);
+      console.log('Received tokens:', tokens);
       this.oauth2Client.setCredentials(tokens);
       this.gmail = google.gmail({ version: 'v1', auth: this.oauth2Client });
-      // Store tokens in Replit Secrets securely
-      process.env.GOOGLE_TOKEN = JSON.stringify(tokens);
-      console.log('Gmail API authenticated successfully. Token stored in GOOGLE_TOKEN.');
+      // Log the token for manual update in Replit Secrets
+      console.log('Gmail API authenticated successfully. Please manually update the GOOGLE_TOKEN secret in Replit Secrets with the following value:');
+      console.log(JSON.stringify(tokens));
     } catch (error) {
-      console.error('Error handling auth callback:', error);
+      console.error('Error handling auth callback:', error.message);
+      console.error('Error details:', error);
       throw error;
     }
   }
@@ -346,11 +374,17 @@ export class GmailScraper {
       for (const email of recentEmails) {
         if (email.ticketInfo) {
           try {
+            const user = await this.getUsernameFromEmail(email.recipientEmail);
+            if (!user) {
+              console.error(`No user found for email: ${email.recipientEmail}`);
+              continue;
+            }
+
             const pendingTicket: InsertPendingTicket = {
-              userId: (await this.getUsernameFromEmail(email.recipientEmail)).id,
+              userId: user.id,
               recipientEmail: email.recipientEmail,
               eventName: email.ticketInfo.eventName || '',
-              eventDate: email.ticketInfo.eventDate || new Date().toISOString(),
+              eventDate: email.ticketInfo.eventDate || new Date(),
               eventTime: email.ticketInfo.eventTime || '',
               venue: email.ticketInfo.venue || '',
               city: email.ticketInfo.city || '',
@@ -360,13 +394,13 @@ export class GmailScraper {
               seat: email.ticketInfo.seat || '',
               emailSubject: email.subject || '',
               emailFrom: email.from || '',
-              rawEmailData: '', //Not implemented in new method
+              rawEmailData: '',
               extractedData: email.ticketInfo,
               status: 'pending'
             };
 
             await db.insert(pendingTickets).values(pendingTicket);
-            console.log('Successfully created pending ticket for user:', email.userName);
+            console.log('Successfully created pending ticket for user:', user.username);
           } catch (error) {
             console.error('Error inserting pending ticket:', error);
           }
@@ -377,11 +411,11 @@ export class GmailScraper {
     }
   }
 
-  async startMonitoring(intervalMs = 300000) { // Check every 5 minutes
+  async startMonitoring(intervalMs = 300000) {
     const authResult = await this.authenticate();
     if (!authResult.isAuthenticated && authResult.authUrl) {
       console.log('Gmail scraper not authenticated. Please authorize using this URL:', authResult.authUrl);
-      return authResult; // Return authUrl for the client to handle
+      return authResult;
     }
 
     this.isMonitoringActive = true;
@@ -405,7 +439,6 @@ export async function initGmailScraper() {
     console.log('Initializing Gmail scraper...');
     const scraper = new GmailScraper();
 
-    // Add explicit error handling for authentication
     try {
       const authResult = await scraper.authenticate();
 
