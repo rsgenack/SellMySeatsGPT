@@ -1,15 +1,39 @@
 {
-  "name": "rest-express",
+  "name": "tickettrader",
   "version": "1.0.0",
+  "description": "A platform for transferring and managing event tickets",
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "dev": "tsx server/index.ts",
-    "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
-    "start": "NODE_ENV=production node dist/index.js",
+    "dev": "tsx -r dotenv/config server/index.ts",
+    "build": "node scripts/build.js",
+    "prebuild": "node -e \"require('fs').existsSync('.env') || require('fs').copyFileSync('.env.example', '.env', { overwrite: false })\"",
+    "start": "NODE_ENV=production node dist/start.js",
     "check": "tsc",
-    "db:push": "drizzle-kit push"
+    "db:push": "drizzle-kit push --config=config/drizzle.config.ts",
+    "db:migrate": "drizzle-kit generate --config=config/drizzle.config.ts",
+    "db:check": "node -e \"require('dotenv').config(); console.log('DB Connection check: ' + (process.env.DATABASE_URL || 'No DATABASE_URL found'))\"",
+    "db:test": "NODE_OPTIONS='--experimental-vm-modules' node -e \"import('dotenv').then(dotenv => { dotenv.config(); console.log('Database URL:', process.env.DATABASE_URL ? 'Found (masked: ' + process.env.DATABASE_URL.replace(/:([^:@]+)@/, ':****@').substring(0, 25) + '...)' : 'Missing!'); });\"",
+    "db:setup": "node scripts/apply-migration.js",
+    "lint": "eslint . --ext .ts,.tsx",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "test": "echo \"No tests specified\" && exit 0"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/tickettrader.git"
+  },
+  "keywords": [
+    "tickets",
+    "ticketing",
+    "event",
+    "transfer"
+  ],
+  "author": "TicketTrader Team",
+  "bugs": {
+    "url": "https://github.com/yourusername/tickettrader/issues"
+  },
+  "homepage": "https://github.com/yourusername/tickettrader#readme",
   "dependencies": {
     "@azure/identity": "^4.7.0",
     "@hookform/resolvers": "^3.9.1",
@@ -98,11 +122,18 @@
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.1",
     "@types/ws": "^8.5.13",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
     "@vitejs/plugin-react": "^4.3.2",
     "autoprefixer": "^10.4.20",
     "drizzle-kit": "^0.22.5",
     "esbuild": "^0.25.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-react": "^7.34.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
     "postcss": "^8.4.47",
+    "prettier": "^3.2.5",
     "tailwindcss": "^3.4.14",
     "tsx": "^4.19.1",
     "typescript": "5.6.3",
@@ -110,5 +141,8 @@
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8"
+  },
+  "engines": {
+    "node": ">=16.0.0"
   }
 }

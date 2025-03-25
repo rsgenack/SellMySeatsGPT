@@ -3,8 +3,27 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initGmailScraper } from "./gmail-scraper";
 import { config } from 'dotenv';
+import { resolve } from 'path';
 
-config();
+// Load environment variables with more robust path resolution
+config({ path: resolve(process.cwd(), '.env') });
+
+// Log important environment variables for debugging (masking sensitive parts)
+console.log('=== Environment Configuration ===');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+const dbUrl = process.env.DATABASE_URL;
+if (dbUrl) {
+  const maskedUrl = dbUrl.replace(/:([^:@]+)@/, ':****@');
+  console.log('DATABASE_URL present:', maskedUrl.substring(0, 20) + '...');
+} else {
+  console.error('WARNING: DATABASE_URL is not defined!');
+}
+console.log('PGHOST present:', !!process.env.PGHOST);
+console.log('PGUSER present:', !!process.env.PGUSER);
+console.log('PGDATABASE present:', !!process.env.PGDATABASE);
+console.log('PGPORT present:', !!process.env.PGPORT);
+console.log('PGPASSWORD present:', !!process.env.PGPASSWORD);
+console.log('==============================');
 
 const app = express();
 app.use(express.json());
@@ -53,7 +72,9 @@ app.use((req, res, next) => {
 
 (async () => {
   try {
+    console.log('Registering routes...');
     const server = await registerRoutes(app);
+    console.log('Routes registered successfully');
 
     // Error handling middleware
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -91,8 +112,8 @@ app.use((req, res, next) => {
       console.error('Gmail scraper initialization error:', error);
     }
 
-    // Use PORT from environment variable (for Heroku) or default to 5000 (for Replit)
-    const port = process.env.PORT || 5000;
+    // Use PORT from environment variable (for Heroku) or default to 5001 (instead of 5000)
+    const port = process.env.PORT || 5001;
     server.listen({
       port,
       host: "0.0.0.0",
