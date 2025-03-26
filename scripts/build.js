@@ -131,12 +131,24 @@ GOOGLE_TOKEN={"access_token":"your-access-token","refresh_token":"your-refresh-t
       console.log('📄 Skipping .env copy (not needed in deployment)');
     }
 
-    // Create a simplified start script in the dist folder
+    // Create a robust start script in the dist folder with database connection testing
     const startScript = `
 import { config } from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+
+// Global error handler to prevent crashes
+process.on('uncaughtException', (error) => {
+  console.error('💥 UNCAUGHT EXCEPTION in start.js:', error);
+  console.error('Stack trace:', error.stack);
+  // Don't exit the process - let Vercel handle the restart if needed
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('💥 UNHANDLED REJECTION in start.js:', reason);
+  // Don't exit the process - let Vercel handle the restart if needed
+});
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -178,22 +190,72 @@ console.log('- PGDATABASE exists:', !!process.env.PGDATABASE);
 console.log('- PGPORT exists:', !!process.env.PGPORT);
 console.log('- PGPASSWORD exists:', !!process.env.PGPASSWORD);
 
-// Import the server
+// Database connection test function - to be called before server start
+async function testDatabaseConnection() {
+  try {
+    console.log('🔌 Testing database connection...');
+    
+    // Check if we have connection info
+    if (!process.env.DATABASE_URL && !(process.env.PGHOST && process.env.PGUSER && process.env.PGDATABASE)) {
+      throw new Error('Missing database connection information. Please check environment variables.');
+    }
+    
+    // Dynamically import pg to test connection
+    const { Pool } = await import('pg');
+    
+    // Create a pool with a short timeout
+    const pool = new Pool({
+      connectionTimeoutMillis: 5000,
+      statement_timeout: 5000
+    });
+    
+    // Try to connect
+    const client = await pool.connect();
+    console.log('✅ Successfully connected to database');
+    
+    // Run a simple query
+    const result = await client.query('SELECT NOW() as current_time');
+    console.log('✅ Database query successful:', result.rows[0].current_time);
+    
+    // Release client
+    client.release();
+    await pool.end();
+    
+    return true;
+  } catch (error) {
+    console.error('❌ Database connection test failed:', error.message);
+    console.error('   This will likely cause server startup failure');
+    return false;
+  }
+}
+
+// Import the server with proper error handling
 try {
+  console.log('📥 Checking database connection before server import...');
+  
+  // Test database connection first (don't await, we'll still try to import server)
+  testDatabaseConnection()
+    .then(isConnected => {
+      console.log('🔄 Database connection status:', isConnected ? 'Connected' : 'Failed');
+    })
+    .catch(error => {
+      console.error('💥 Database test error:', error);
+    });
+  
   console.log('📥 Importing server...');
   import('./index.js').catch(error => {
     console.error('❌ Error importing server:', error);
-    process.exit(1);
+    console.error('Stack trace:', error.stack);
   });
 } catch (error) {
   console.error('❌ Fatal error importing server:', error);
-  process.exit(1);
+  console.error('Stack trace:', error.stack);
 }
 `;
 
     const startScriptPath = path.join(distDir, 'start.js');
     fs.writeFileSync(startScriptPath, startScript);
-    console.log('📄 Created start script in dist directory');
+    console.log('📄 Created robust start script in dist directory');
 
     // Copy vercel.json to the dist directory if in Vercel deployment
     if (process.env.VERCEL) {

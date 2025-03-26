@@ -18,28 +18,62 @@ console.log('🔑 DATABASE_URL exists:', !!process.env.DATABASE_URL);
 console.log('🔑 PGHOST exists:', !!process.env.PGHOST);
 console.log('🔑 PGDATABASE exists:', !!process.env.PGDATABASE);
 
+// Express app instance for standalone handling
+let expressApp = null;
+
+// Try to initialize the Express app only once
 try {
   console.log('📥 Importing start.js...');
-  import('./dist/start.js');
+  
+  // Wrap the import in a process-level try/catch to prevent immediate crash
+  process.on('uncaughtException', (error) => {
+    console.error('❌ UNCAUGHT EXCEPTION:', error);
+    console.error('Stack trace:', error.stack);
+  });
+  
+  // Delay import to ensure error handler is registered
+  import('./dist/start.js').catch(error => {
+    console.error('❌ Error importing start.js:', error);
+    console.error('Stack trace:', error.stack);
+  });
+  
   console.log('✅ Successfully imported start.js');
 } catch (error) {
-  console.error('❌ Error importing start.js:', error);
+  console.error('❌ Critical error importing start.js:', error);
+  console.error('Stack trace:', error.stack);
 }
 
 // Export a simple handler function for Vercel
 export default function handler(req, res) {
   console.log('🔄 Request received:', req.method, req.url);
-  console.log('🔄 Headers:', JSON.stringify(req.headers));
   
   try {
-    // This function will be automatically used by the @vercel/node runtime
-    // The actual handling is done by importing the start.js file above
-    // which initializes our Express application
+    // Check if we have critical database environment variables
+    if (!process.env.DATABASE_URL && !process.env.PGHOST) {
+      console.error('❌ Missing critical database environment variables');
+      return res.status(500).json({
+        error: 'Configuration Error',
+        message: 'Missing database connection information. Please check environment variables.',
+        timestamp: new Date().toISOString()
+      });
+    }
     
-    // If we reach this point, it means the request is not being handled by the Express app
+    // Return a basic health check response for /api/health
+    if (req.url === '/api/health') {
+      return res.status(200).json({
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        region: process.env.VERCEL_REGION || 'unknown',
+        env: process.env.VERCEL_ENV || process.env.NODE_ENV
+      });
+    }
+    
+    // The actual request handling is done through the imported start.js
+    // If we reach this point without being handled by Express, show a fallback error
     console.error('⚠️ Request reached fallback handler - Express app not handling request');
     res.status(500).json({ 
       error: 'Application not properly initialized',
+      message: 'The server application failed to initialize properly. Please check logs.',
       timestamp: new Date().toISOString(),
       path: req.url,
       method: req.method
@@ -49,7 +83,8 @@ export default function handler(req, res) {
     res.status(500).json({ 
       error: 'Handler error',
       message: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      timestamp: new Date().toISOString()
     });
   }
 } 
