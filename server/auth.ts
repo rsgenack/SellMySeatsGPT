@@ -20,6 +20,10 @@ declare global {
 
 const scryptAsync = promisify(scrypt);
 
+// Admin user credentials
+const ADMIN_EMAIL = "greenbaumamichael@gmail.com";
+const ADMIN_PASSWORD = "michael101";
+
 async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
   const buf = (await scryptAsync(password, salt, 64)) as Buffer;
@@ -88,6 +92,41 @@ export function setupAuth(app: Express) {
       { usernameField: 'email' },
       async (email, password, done) => {
         try {
+          // Special case for admin user with hardcoded credentials
+          if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+            console.log('[Auth] Admin login detected');
+            // Check if admin user exists in database
+            const [adminUser] = await db
+              .select()
+              .from(users)
+              .where(eq(users.email, ADMIN_EMAIL));
+              
+            if (adminUser) {
+              // Admin exists, return with admin privileges forced to true
+              return done(null, {
+                ...adminUser,
+                isAdmin: true
+              });
+            } else {
+              // Create admin user if it doesn't exist
+              console.log('[Auth] Creating admin user account');
+              const uniqueEmail = generateUniqueEmail('admin');
+              const adminUser = await storage.createUser({
+                username: 'admin',
+                password: await hashPassword(ADMIN_PASSWORD),
+                email: ADMIN_EMAIL,
+                uniqueEmail,
+                isAdmin: true
+              });
+              
+              return done(null, {
+                ...adminUser,
+                isAdmin: true
+              });
+            }
+          }
+          
+          // Regular user authentication
           const [user] = await db
             .select()
             .from(users)
@@ -116,9 +155,13 @@ export function setupAuth(app: Express) {
       if (!user) {
         return done(null, false);
       }
+      
+      // Force admin status for the specific email
+      const isAdmin = user.email === ADMIN_EMAIL ? true : Boolean(user.isAdmin);
+      
       done(null, {
         ...user,
-        isAdmin: Boolean(user.isAdmin)
+        isAdmin
       });
     } catch (err) {
       done(err);
