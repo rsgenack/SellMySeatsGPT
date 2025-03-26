@@ -6,7 +6,9 @@
       "use": "@vercel/node",
       "config": {
         "nodeVersion": "18.x",
-        "includeFiles": ["dist/**"]
+        "includeFiles": ["dist/**"],
+        "memory": 1024,
+        "maxDuration": 10
       }
     }
   ],
@@ -22,12 +24,6 @@
   ],
   "env": {
     "NODE_ENV": "production"
-  },
-  "functions": {
-    "vercel-adapter.js": {
-      "memory": 1024,
-      "maxDuration": 10
-    }
   },
   "crons": [],
   "framework": null,
