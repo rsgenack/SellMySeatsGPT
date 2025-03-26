@@ -12,7 +12,8 @@ async function build() {
   console.log('🔨 Starting build process...');
   
   // Check if .env file exists
-  const envPath = path.join(__dirname, '.env');
+  const projectRoot = path.join(__dirname, '..');
+  const envPath = path.join(projectRoot, '.env');
   if (!fs.existsSync(envPath)) {
     console.warn('⚠️ Warning: .env file not found. Creating a template .env file...');
     // Create a template .env file with placeholders
@@ -41,6 +42,12 @@ GOOGLE_TOKEN={"access_token":"your-access-token","refresh_token":"your-refresh-t
   }
 
   try {
+    // Ensure dist directory exists
+    const distDir = path.join(projectRoot, 'dist');
+    if (!fs.existsSync(distDir)) {
+      fs.mkdirSync(distDir, { recursive: true });
+    }
+
     // Build the client
     console.log('📦 Building client...');
     await execAsync('vite build');
@@ -52,7 +59,7 @@ GOOGLE_TOKEN={"access_token":"your-access-token","refresh_token":"your-refresh-t
     console.log('✅ Server build complete');
 
     // Copy .env file to dist directory
-    const distEnvPath = path.join(__dirname, 'dist', '.env');
+    const distEnvPath = path.join(distDir, '.env');
     fs.copyFileSync(envPath, distEnvPath);
     console.log('📄 Copied .env file to dist directory');
 
@@ -75,7 +82,7 @@ console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
 import './index.js';
 `;
 
-    const startScriptPath = path.join(__dirname, 'dist', 'start.js');
+    const startScriptPath = path.join(distDir, 'start.js');
     fs.writeFileSync(startScriptPath, startScript);
     console.log('📄 Created start script in dist directory');
 

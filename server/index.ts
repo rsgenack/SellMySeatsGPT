@@ -36,7 +36,8 @@ app.use((req, res, next) => {
     process.env.REPLIT_DOMAIN,  // Replit domain
     process.env.CUSTOM_DOMAIN,  // Custom domain
     process.env.HEROKU_APP_URL, // Heroku app URL
-    'http://localhost:5000'     // Local development
+    'http://localhost:5000',    // Local development
+    'https://sellmyseats.rgnack.com' // Our Cloudflare domain
   ].filter(Boolean); // Remove undefined values
 
   const origin = req.headers.origin;
@@ -70,58 +71,162 @@ app.use((req, res, next) => {
   next();
 });
 
-(async () => {
-  try {
-    console.log('Registering routes...');
-    const server = await registerRoutes(app);
-    console.log('Routes registered successfully');
+// Export adapter for Cloudflare Workers
+export async function createRequestHandler(request) {
+  // Initialize server if not already done
+  if (!globalThis.server) {
+    try {
+      console.log('Registering routes...');
+      const server = await registerRoutes(app);
+      console.log('Routes registered successfully');
 
-    // Error handling middleware
-    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-      console.error('Server error:', err);
-      const status = err.status || err.statusCode || 500;
-      const message = err.message || "Internal Server Error";
-      res.status(status).json({ message });
-    });
+      // Error handling middleware
+      app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+        console.error('Server error:', err);
+        const status = err.status || err.statusCode || 500;
+        const message = err.message || "Internal Server Error";
+        res.status(status).json({ message });
+      });
 
-    // Setup Vite in development mode
-    if (process.env.NODE_ENV !== "production") {
-      console.log("Setting up Vite middleware for development...");
-      await setupVite(app, server);
-    } else {
+      // Setup production static serving
       console.log("Setting up static file serving for production...");
       serveStatic(app);
-    }
 
-    // Initialize Gmail scraper with better error handling
-    try {
-      console.log('Starting Gmail scraper initialization...');
-      console.log('Checking environment variables:');
-      console.log('- GOOGLE_CLIENT_ID exists:', !!process.env.GOOGLE_CLIENT_ID);
-      console.log('- GOOGLE_CLIENT_SECRET exists:', !!process.env.GOOGLE_CLIENT_SECRET);
-      console.log('- GOOGLE_TOKEN exists:', !!process.env.GOOGLE_TOKEN);
+      // Initialize Gmail scraper with better error handling
+      try {
+        console.log('Starting Gmail scraper initialization...');
+        console.log('Checking environment variables:');
+        console.log('- GOOGLE_CLIENT_ID exists:', !!process.env.GOOGLE_CLIENT_ID);
+        console.log('- GOOGLE_CLIENT_SECRET exists:', !!process.env.GOOGLE_CLIENT_SECRET);
+        console.log('- GOOGLE_TOKEN exists:', !!process.env.GOOGLE_TOKEN);
 
-      const scraperResult = await initGmailScraper();
-      console.log('Gmail scraper initialization result:', 
-        scraperResult ? (scraperResult.authUrl ? 'Authentication needed' : 'Success') : 'Failed');
+        const scraperResult = await initGmailScraper();
+        console.log('Gmail scraper initialization result:', 
+          scraperResult ? (scraperResult.authUrl ? 'Authentication needed' : 'Success') : 'Failed');
 
-      if (scraperResult?.error) {
-        console.error('Gmail scraper initialization error details:', scraperResult.error);
+        if (scraperResult?.error) {
+          console.error('Gmail scraper initialization error details:', scraperResult.error);
+        }
+      } catch (error) {
+        console.error('Gmail scraper initialization error:', error);
       }
+      
+      globalThis.server = server;
     } catch (error) {
-      console.error('Gmail scraper initialization error:', error);
+      console.error("Failed to initialize server:", error);
+      throw error;
     }
-
-    // Use PORT from environment variable (for Heroku) or default to 5001 (instead of 5000)
-    const port = process.env.PORT || 5001;
-    server.listen({
-      port,
-      host: "0.0.0.0",
-    }, () => {
-      log(`Server running at http://0.0.0.0:${port}`);
+  }
+  
+  // Use adapter-cloudflare to convert request/response
+  try {
+    return new Promise((resolve, reject) => {
+      const expressRequest = createExpressRequest(request);
+      const expressResponse = createExpressResponse(resolve);
+      
+      app(expressRequest, expressResponse);
     });
   } catch (error) {
-    console.error("Failed to start server:", error);
-    process.exit(1);
+    console.error("Error handling request:", error);
+    return new Response("Server Error", { status: 500 });
   }
-})();
+}
+
+// Helper functions to convert between Cloudflare Workers and Express.js
+function createExpressRequest(workerRequest) {
+  const url = new URL(workerRequest.url);
+  return {
+    method: workerRequest.method,
+    url: url.pathname + url.search,
+    headers: Object.fromEntries(workerRequest.headers.entries()),
+    body: workerRequest.body,
+    query: Object.fromEntries(url.searchParams),
+    params: {},
+  };
+}
+
+function createExpressResponse(resolve) {
+  const headers = new Headers();
+  let statusCode = 200;
+  let body = '';
+  
+  return {
+    setHeader: (name, value) => {
+      headers.set(name, value);
+      return this;
+    },
+    status: (code) => {
+      statusCode = code;
+      return this;
+    },
+    send: (data) => {
+      body = data;
+      resolve(new Response(body, { status: statusCode, headers }));
+    },
+    json: (data) => {
+      headers.set('Content-Type', 'application/json');
+      body = JSON.stringify(data);
+      resolve(new Response(body, { status: statusCode, headers }));
+    },
+    // Add other response methods as needed
+  };
+}
+
+// Regular Node.js server start (for local development)
+if (process.env.NODE_ENV !== "cloudflare") {
+  (async () => {
+    try {
+      console.log('Registering routes...');
+      const server = await registerRoutes(app);
+      console.log('Routes registered successfully');
+
+      // Error handling middleware
+      app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+        console.error('Server error:', err);
+        const status = err.status || err.statusCode || 500;
+        const message = err.message || "Internal Server Error";
+        res.status(status).json({ message });
+      });
+
+      // Setup Vite in development mode
+      if (process.env.NODE_ENV !== "production") {
+        console.log("Setting up Vite middleware for development...");
+        await setupVite(app, server);
+      } else {
+        console.log("Setting up static file serving for production...");
+        serveStatic(app);
+      }
+
+      // Initialize Gmail scraper with better error handling
+      try {
+        console.log('Starting Gmail scraper initialization...');
+        console.log('Checking environment variables:');
+        console.log('- GOOGLE_CLIENT_ID exists:', !!process.env.GOOGLE_CLIENT_ID);
+        console.log('- GOOGLE_CLIENT_SECRET exists:', !!process.env.GOOGLE_CLIENT_SECRET);
+        console.log('- GOOGLE_TOKEN exists:', !!process.env.GOOGLE_TOKEN);
+
+        const scraperResult = await initGmailScraper();
+        console.log('Gmail scraper initialization result:', 
+          scraperResult ? (scraperResult.authUrl ? 'Authentication needed' : 'Success') : 'Failed');
+
+        if (scraperResult?.error) {
+          console.error('Gmail scraper initialization error details:', scraperResult.error);
+        }
+      } catch (error) {
+        console.error('Gmail scraper initialization error:', error);
+      }
+
+      // Use PORT from environment variable (for Heroku) or default to 5001 (instead of 5000)
+      const port = process.env.PORT || 5001;
+      server.listen({
+        port,
+        host: "0.0.0.0",
+      }, () => {
+        log(`Server running at http://0.0.0.0:${port}`);
+      });
+    } catch (error) {
+      console.error("Failed to start server:", error);
+      process.exit(1);
+    }
+  })();
+}
