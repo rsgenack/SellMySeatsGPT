@@ -12,6 +12,8 @@ async function build() {
   console.log('🔨 Starting build process...');
   console.log('📦 NODE_ENV:', process.env.NODE_ENV);
   console.log('📦 VERCEL_ENV:', process.env.VERCEL_ENV);
+  console.log('📦 VERCEL_URL:', process.env.VERCEL_URL);
+  console.log('📦 VERCEL_REGION:', process.env.VERCEL_REGION);
   console.log('📁 Current directory:', process.cwd());
   console.log('📁 Script directory:', __dirname);
   
@@ -49,6 +51,11 @@ EMAIL_IMAP_PASSWORD=your-password
 # Google API Configuration
 GMAIL_CREDENTIALS={"installed":{"client_id":"your-client-id","project_id":"your-project","auth_uri":"https://accounts.google.com/o/oauth2/auth","token_uri":"https://oauth2.googleapis.com/token","auth_provider_x509_cert_url":"https://www.googleapis.com/oauth2/v1/certs","client_secret":"your-client-secret","redirect_uris":["http://localhost"]}}
 GOOGLE_TOKEN={"access_token":"your-access-token","refresh_token":"your-refresh-token","token_type":"Bearer"}
+
+# Vercel Configuration
+VERCEL=1
+VERCEL_URL=${process.env.VERCEL_URL || ''}
+VERCEL_ENV=${process.env.VERCEL_ENV || 'development'}
 `;
     fs.writeFileSync(envPath, templateEnv);
     console.log('✅ Created template .env file. Please update it with your actual values.');
@@ -157,6 +164,8 @@ console.log('📁 Current directory:', process.cwd());
 console.log('📁 Script directory:', __dirname);
 console.log('📦 NODE_ENV:', process.env.NODE_ENV);
 console.log('📦 VERCEL_ENV:', process.env.VERCEL_ENV);
+console.log('📦 VERCEL_URL:', process.env.VERCEL_URL);
+console.log('📦 VERCEL_REGION:', process.env.VERCEL_REGION);
 
 // List directories to verify structure
 try {
@@ -189,6 +198,9 @@ console.log('- PGUSER exists:', !!process.env.PGUSER);
 console.log('- PGDATABASE exists:', !!process.env.PGDATABASE);
 console.log('- PGPORT exists:', !!process.env.PGPORT);
 console.log('- PGPASSWORD exists:', !!process.env.PGPASSWORD);
+console.log('- VERCEL_URL exists:', !!process.env.VERCEL_URL);
+console.log('- VERCEL_ENV exists:', !!process.env.VERCEL_ENV);
+console.log('- VERCEL_REGION exists:', !!process.env.VERCEL_REGION);
 
 // Database connection test function - to be called before server start
 async function testDatabaseConnection() {
@@ -249,59 +261,27 @@ async function testDatabaseConnection() {
   }
 }
 
-// Import the server with proper error handling
-try {
-  console.log('📥 Checking database connection before server import...');
-  
-  // Test database connection first (don't await, we'll still try to import server)
-  testDatabaseConnection()
-    .then(isConnected => {
-      console.log('🔄 Database connection status:', isConnected ? 'Connected' : 'Failed');
-    })
-    .catch(error => {
-      console.error('💥 Database test error:', error);
-    });
-  
-  console.log('📥 Importing server...');
-  import('./index.js').catch(error => {
-    console.error('❌ Error importing server:', error);
-    console.error('Stack trace:', error.stack);
-  });
-} catch (error) {
-  console.error('❌ Fatal error importing server:', error);
-  console.error('Stack trace:', error.stack);
-}
+// Test database connection before starting the server
+await testDatabaseConnection();
+
+// Import and start the server
+const { createRequestHandler } = await import('./index.js');
+export default createRequestHandler;
 `;
 
-    const startScriptPath = path.join(distDir, 'start.js');
-    fs.writeFileSync(startScriptPath, startScript);
-    console.log('📄 Created robust start script in dist directory');
-
-    // Copy vercel.json to the dist directory if in Vercel deployment
-    if (process.env.VERCEL) {
-      const vercelConfigPath = path.join(projectRoot, 'vercel.json');
-      if (fs.existsSync(vercelConfigPath)) {
-        const distVercelConfigPath = path.join(distDir, 'vercel.json');
-        fs.copyFileSync(vercelConfigPath, distVercelConfigPath);
-        console.log('📄 Copied vercel.json to dist directory for Vercel deployment');
-      }
-    }
-
-    // Log the final dist directory contents
-    console.log('📂 Final dist directory contents:', fs.readdirSync(distDir).join(', '));
+    // Write the start script
+    fs.writeFileSync(path.join(distDir, 'start.js'), startScript);
+    console.log('✅ Created start.js in dist directory');
 
     console.log('🎉 Build process completed successfully!');
-    console.log('To start the application in production mode:');
-    console.log('1. Update the .env file with your production credentials');
-    console.log('2. Run: node dist/start.js');
   } catch (error) {
-    console.error('❌ Build failed:', error);
+    console.error('❌ Build process failed:', error);
     process.exit(1);
   }
 }
 
-console.log('🚀 Starting build script execution...');
+// Run the build process
 build().catch(error => {
-  console.error('❌ Unhandled error during build:', error);
+  console.error('❌ Build process failed:', error);
   process.exit(1);
 }); 

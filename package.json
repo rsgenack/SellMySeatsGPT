@@ -17,7 +17,8 @@
     "db:setup": "node scripts/apply-migration.js",
     "lint": "eslint . --ext .ts,.tsx",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "test": "echo \"No tests specified\" && exit 0"
+    "test": "echo \"No tests specified\" && exit 0",
+    "generate-favicons": "node scripts/generate-favicons.js"
   },
   "repository": {
     "type": "git",
@@ -101,6 +102,7 @@
     "react-joyride": "^2.9.3",
     "react-resizable-panels": "^2.1.4",
     "recharts": "^2.13.0",
+    "sharp": "^0.33.5",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^1.1.0",
@@ -143,6 +145,6 @@
     "bufferutil": "^4.0.8"
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": "18.x"
   }
 }

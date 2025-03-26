@@ -44,7 +44,10 @@ app.use((req, res, next) => {
     process.env.HEROKU_APP_URL, // Heroku app URL
     'http://localhost:5000',    // Local development
     'https://sellmyseats.rgnack.com', // Our Cloudflare domain
-    'https://sell-my-seats-gpt.vercel.app' // Vercel domain
+    'https://sell-my-seats-gpt.vercel.app', // Vercel domain
+    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null, // Dynamic Vercel URL
+    process.env.VERCEL_BRANCH_URL ? `https://${process.env.VERCEL_BRANCH_URL}` : null, // Vercel branch URL
+    process.env.VERCEL_GIT_COMMIT_REF ? `https://${process.env.VERCEL_GIT_COMMIT_REF}-${process.env.VERCEL_PROJECT_NAME}.vercel.app` : null // Vercel preview URL
   ].filter(Boolean); // Remove undefined values
 
   const origin = req.headers.origin;
@@ -53,8 +56,11 @@ app.use((req, res, next) => {
   }
 
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
   res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('X-Content-Type-Options', 'nosniff');
+  res.header('X-Frame-Options', 'DENY');
+  res.header('X-XSS-Protection', '1; mode=block');
 
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
@@ -77,8 +83,47 @@ app.use((req, res, next) => {
 });
 
 // Add a health check endpoint for Vercel
-app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+app.get('/api/health', async (req, res) => {
+  try {
+    // Check database connection
+    const dbStatus = await testDatabaseConnection();
+    
+    // Check environment variables
+    const envStatus = {
+      database: {
+        DATABASE_URL: !!process.env.DATABASE_URL,
+        PGHOST: !!process.env.PGHOST,
+        PGUSER: !!process.env.PGUSER,
+        PGDATABASE: !!process.env.PGDATABASE,
+        PGPORT: !!process.env.PGPORT,
+        PGPASSWORD: !!process.env.PGPASSWORD
+      },
+      vercel: {
+        VERCEL: !!process.env.VERCEL,
+        VERCEL_ENV: process.env.VERCEL_ENV,
+        VERCEL_URL: process.env.VERCEL_URL,
+        VERCEL_REGION: process.env.VERCEL_REGION
+      }
+    };
+
+    res.status(200).json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      services: {
+        database: dbStatus ? 'connected' : 'disconnected',
+        environment: envStatus
+      },
+      uptime: process.uptime(),
+      memory: process.memoryUsage()
+    });
+  } catch (error) {
+    console.error('Health check failed:', error);
+    res.status(500).json({
+      status: 'error',
+      timestamp: new Date().toISOString(),
+      error: error.message
+    });
+  }
 });
 
 // Export adapter for Cloudflare Workers
