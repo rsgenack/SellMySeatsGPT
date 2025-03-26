@@ -35,6 +35,5 @@
   "outputDirectory": "dist",
   "installCommand": "npm install",
   "devCommand": "npm run dev",
-  "regions": ["iad1"],
-  "nodeCompatibilityFlag": true
+  "regions": ["iad1"]
 } 
