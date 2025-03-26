@@ -7,6 +7,7 @@
       "config": {
         "nodeVersion": "18.x",
         "includeFiles": [
+          "api/**",
           "dist/**",
           "src/**",
           "server/**",
@@ -14,8 +15,7 @@
           "public/**"
         ],
         "memory": 1024,
-        "maxDuration": 10,
-        "helpers": true
+        "maxDuration": 10
       }
     },
     {
@@ -58,7 +58,7 @@
     },
     {
       "src": "/assets/(.*)",
-      "dest": "public/assets/$1"
+      "dest": "/public/assets/$1"
     },
     {
       "src": "/(.*)",
