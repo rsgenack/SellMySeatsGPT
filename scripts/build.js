@@ -200,13 +200,33 @@ async function testDatabaseConnection() {
       throw new Error('Missing database connection information. Please check environment variables.');
     }
     
+    // Force SSL for database connections if not already specified
+    if (process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('sslmode=require')) {
+      console.log('🔒 Adding SSL requirement to DATABASE_URL');
+      if (process.env.DATABASE_URL.includes('?')) {
+        process.env.DATABASE_URL += '&sslmode=require';
+      } else {
+        process.env.DATABASE_URL += '?sslmode=require';
+      }
+    }
+    
+    // Also set PGSSLMODE for individual connection params
+    if (!process.env.PGSSLMODE) {
+      console.log('🔒 Setting PGSSLMODE=require');
+      process.env.PGSSLMODE = 'require';
+    }
+    
     // Dynamically import pg to test connection
     const { Pool } = await import('pg');
     
-    // Create a pool with a short timeout
+    // Create a pool with a short timeout and SSL enabled
     const pool = new Pool({
       connectionTimeoutMillis: 5000,
-      statement_timeout: 5000
+      statement_timeout: 5000,
+      ssl: {
+        rejectUnauthorized: false,
+        require: true
+      }
     });
     
     // Try to connect

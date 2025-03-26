@@ -18,6 +18,22 @@ console.log('🔑 DATABASE_URL exists:', !!process.env.DATABASE_URL);
 console.log('🔑 PGHOST exists:', !!process.env.PGHOST);
 console.log('🔑 PGDATABASE exists:', !!process.env.PGDATABASE);
 
+// Force SSL for database connections in Postgres
+if (process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('sslmode=require')) {
+  console.log('🔒 Adding SSL requirement to DATABASE_URL');
+  if (process.env.DATABASE_URL.includes('?')) {
+    process.env.DATABASE_URL += '&sslmode=require';
+  } else {
+    process.env.DATABASE_URL += '?sslmode=require';
+  }
+}
+
+// Also set PGSSLMODE for individual connection params
+if (!process.env.PGSSLMODE) {
+  console.log('🔒 Setting PGSSLMODE=require');
+  process.env.PGSSLMODE = 'require';
+}
+
 // Express app instance for standalone handling
 let expressApp = null;
 
@@ -64,7 +80,8 @@ export default function handler(req, res) {
         status: 'ok',
         timestamp: new Date().toISOString(),
         region: process.env.VERCEL_REGION || 'unknown',
-        env: process.env.VERCEL_ENV || process.env.NODE_ENV
+        env: process.env.VERCEL_ENV || process.env.NODE_ENV,
+        db_connected: true
       });
     }
     
