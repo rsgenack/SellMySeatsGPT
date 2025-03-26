@@ -1,0 +1,719 @@
+"TimeUTC","timestampInMs","requestPath","requestMethod","requestQueryString","responseStatusCode","requestId","requestUserAgent","level","environment","branch","vercelCache","type","function","host","deploymentDomain","deploymentId","durationMs","region","maxMemoryUsed","memorySize","message","projectId"
+"2025-03-26 01:36:48",1742953008770,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/","GET","",-1,"7ggff-1742953008505-226b28d543ff","vercel-og/1.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",-1,"iad1",-1,-1,"🔍 [vercel-adapter.js:1] Execution started
+🚀 [vercel-adapter.js:2] Vercel adapter starting...
+📁 [vercel-adapter.js:3] Current directory: /var/task
+📦 [vercel-adapter.js:4] NODE_ENV: production
+📦 [vercel-adapter.js:5] VERCEL_ENV: undefined
+📦 [vercel-adapter.js:6] VERCEL_REGION: undefined
+Failed to create debugging_logs directory: ReferenceError: Cannot access 'fs' before initialization
+    at file:///var/task/vercel-adapter.js:15:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+🔎 [vercel-adapter.js:20] Loading filesystem module
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/task/package.json' contains ""type"": ""module"". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/task/vercel-adapter.js:107:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+Node.js process exited with exit status: 1. The logs above can help with debugging the issue.","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:36:48",1742953008547,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/","GET","",500,"7ggff-1742953008505-226b28d543ff","vercel-og/1.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",193,"iad1",75,1024,"","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:31:32",1742952692225,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/favicon.ico","GET","",-1,"vmxd7-1742952691994-28fed2eb4438","Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",-1,"iad1",-1,-1,"🔍 [vercel-adapter.js:1] Execution started
+🚀 [vercel-adapter.js:2] Vercel adapter starting...
+📁 [vercel-adapter.js:3] Current directory: /var/task
+📦 [vercel-adapter.js:4] NODE_ENV: production
+📦 [vercel-adapter.js:5] VERCEL_ENV: undefined
+📦 [vercel-adapter.js:6] VERCEL_REGION: undefined
+Failed to create debugging_logs directory: ReferenceError: Cannot access 'fs' before initialization
+    at file:///var/task/vercel-adapter.js:15:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+🔎 [vercel-adapter.js:20] Loading filesystem module
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/task/package.json' contains ""type"": ""module"". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/task/vercel-adapter.js:107:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+Node.js process exited with exit status: 1. The logs above can help with debugging the issue.","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:31:31",1742952691999,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/favicon.ico","GET","",500,"vmxd7-1742952691994-28fed2eb4438","Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",207,"iad1",75,1024,"","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:31:31",1742952691793,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/","GET","",-1,"rrwh9-1742952691489-819ea7a46816","Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",-1,"iad1",-1,-1,"🔍 [vercel-adapter.js:1] Execution started
+🚀 [vercel-adapter.js:2] Vercel adapter starting...
+📁 [vercel-adapter.js:3] Current directory: /var/task
+📦 [vercel-adapter.js:4] NODE_ENV: production
+📦 [vercel-adapter.js:5] VERCEL_ENV: undefined
+📦 [vercel-adapter.js:6] VERCEL_REGION: undefined
+Failed to create debugging_logs directory: ReferenceError: Cannot access 'fs' before initialization
+    at file:///var/task/vercel-adapter.js:15:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+🔎 [vercel-adapter.js:20] Loading filesystem module
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/task/package.json' contains ""type"": ""module"". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/task/vercel-adapter.js:107:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+Node.js process exited with exit status: 1. The logs above can help with debugging the issue.","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:31:31",1742952691572,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/","GET","",500,"rrwh9-1742952691489-819ea7a46816","Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",203,"iad1",75,1024,"","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:32",1742952632791,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/favicon.png","GET","",-1,"ztcnp-1742952632523-c6b0c9910350","Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",-1,"iad1",-1,-1,"🔍 [vercel-adapter.js:1] Execution started
+🚀 [vercel-adapter.js:2] Vercel adapter starting...
+📁 [vercel-adapter.js:3] Current directory: /var/task
+📦 [vercel-adapter.js:4] NODE_ENV: production
+📦 [vercel-adapter.js:5] VERCEL_ENV: undefined
+📦 [vercel-adapter.js:6] VERCEL_REGION: undefined
+Failed to create debugging_logs directory: ReferenceError: Cannot access 'fs' before initialization
+    at file:///var/task/vercel-adapter.js:15:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+🔎 [vercel-adapter.js:20] Loading filesystem module
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/task/package.json' contains ""type"": ""module"". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/task/vercel-adapter.js:107:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+Node.js process exited with exit status: 1. The logs above can help with debugging the issue.","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:32",1742952632559,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/favicon.png","GET","",500,"ztcnp-1742952632523-c6b0c9910350","Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",213,"iad1",75,1024,"","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:30",1742952630412,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/favicon.png","GET","",-1,"vwf4s-1742952630157-d8405144c3b0","Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",-1,"iad1",-1,-1,"🔍 [vercel-adapter.js:1] Execution started
+🚀 [vercel-adapter.js:2] Vercel adapter starting...
+📁 [vercel-adapter.js:3] Current directory: /var/task
+📦 [vercel-adapter.js:4] NODE_ENV: production
+📦 [vercel-adapter.js:5] VERCEL_ENV: undefined
+📦 [vercel-adapter.js:6] VERCEL_REGION: undefined
+Failed to create debugging_logs directory: ReferenceError: Cannot access 'fs' before initialization
+    at file:///var/task/vercel-adapter.js:15:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+🔎 [vercel-adapter.js:20] Loading filesystem module
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/task/package.json' contains ""type"": ""module"". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/task/vercel-adapter.js:107:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+Node.js process exited with exit status: 1. The logs above can help with debugging the issue.","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:30",1742952630192,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/favicon.png","GET","",500,"vwf4s-1742952630157-d8405144c3b0","Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",203,"iad1",75,1024,"","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:29",1742952629283,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/","GET","",-1,"88z7l-1742952628996-3a78f5313be8","Mozilla/5.0 (X11; Linux x86_64; rv:133.0) Gecko/20100101 Firefox/133.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",-1,"iad1",-1,-1,"🔍 [vercel-adapter.js:1] Execution started
+🚀 [vercel-adapter.js:2] Vercel adapter starting...
+📁 [vercel-adapter.js:3] Current directory: /var/task
+📦 [vercel-adapter.js:4] NODE_ENV: production
+📦 [vercel-adapter.js:5] VERCEL_ENV: undefined
+📦 [vercel-adapter.js:6] VERCEL_REGION: undefined
+Failed to create debugging_logs directory: ReferenceError: Cannot access 'fs' before initialization
+    at file:///var/task/vercel-adapter.js:15:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+🔎 [vercel-adapter.js:20] Loading filesystem module
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/task/package.json' contains ""type"": ""module"". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/task/vercel-adapter.js:107:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+Node.js process exited with exit status: 1. The logs above can help with debugging the issue.","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:29",1742952629115,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/favicon.png","GET","",-1,"fhscw-1742952628860-d2303e9ea643","Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",-1,"iad1",-1,-1,"🔍 [vercel-adapter.js:1] Execution started
+🚀 [vercel-adapter.js:2] Vercel adapter starting...
+📁 [vercel-adapter.js:3] Current directory: /var/task
+📦 [vercel-adapter.js:4] NODE_ENV: production
+📦 [vercel-adapter.js:5] VERCEL_ENV: undefined
+📦 [vercel-adapter.js:6] VERCEL_REGION: undefined
+Failed to create debugging_logs directory: ReferenceError: Cannot access 'fs' before initialization
+    at file:///var/task/vercel-adapter.js:15:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+🔎 [vercel-adapter.js:20] Loading filesystem module
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/task/package.json' contains ""type"": ""module"". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/task/vercel-adapter.js:107:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+Node.js process exited with exit status: 1. The logs above can help with debugging the issue.","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:29",1742952629033,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/","GET","",500,"88z7l-1742952628996-3a78f5313be8","Mozilla/5.0 (X11; Linux x86_64; rv:133.0) Gecko/20100101 Firefox/133.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",234,"iad1",74,1024,"","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:28",1742952628894,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/favicon.png","GET","",500,"fhscw-1742952628860-d2303e9ea643","Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",205,"iad1",75,1024,"","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:28",1742952628822,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/favicon.ico","GET","",-1,"msqvg-1742952628572-f6330555fa3b","Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",-1,"iad1",-1,-1,"🔍 [vercel-adapter.js:1] Execution started
+🚀 [vercel-adapter.js:2] Vercel adapter starting...
+📁 [vercel-adapter.js:3] Current directory: /var/task
+📦 [vercel-adapter.js:4] NODE_ENV: production
+📦 [vercel-adapter.js:5] VERCEL_ENV: undefined
+📦 [vercel-adapter.js:6] VERCEL_REGION: undefined
+Failed to create debugging_logs directory: ReferenceError: Cannot access 'fs' before initialization
+    at file:///var/task/vercel-adapter.js:15:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+🔎 [vercel-adapter.js:20] Loading filesystem module
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/task/package.json' contains ""type"": ""module"". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/task/vercel-adapter.js:107:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+Node.js process exited with exit status: 1. The logs above can help with debugging the issue.","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:28",1742952628787,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/favicon.png","GET","",-1,"4w5ll-1742952628519-048d8f61a033","Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:134.0) Gecko/20100101 Firefox/134.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",-1,"iad1",-1,-1,"🔍 [vercel-adapter.js:1] Execution started
+🚀 [vercel-adapter.js:2] Vercel adapter starting...
+📁 [vercel-adapter.js:3] Current directory: /var/task
+📦 [vercel-adapter.js:4] NODE_ENV: production
+📦 [vercel-adapter.js:5] VERCEL_ENV: undefined
+📦 [vercel-adapter.js:6] VERCEL_REGION: undefined
+Failed to create debugging_logs directory: ReferenceError: Cannot access 'fs' before initialization
+    at file:///var/task/vercel-adapter.js:15:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+🔎 [vercel-adapter.js:20] Loading filesystem module
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/task/package.json' contains ""type"": ""module"". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/task/vercel-adapter.js:107:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+Node.js process exited with exit status: 1. The logs above can help with debugging the issue.","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:28",1742952628614,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/favicon.ico","GET","",500,"msqvg-1742952628572-f6330555fa3b","Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",190,"iad1",75,1024,"","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:28",1742952628555,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/favicon.png","GET","",500,"4w5ll-1742952628519-048d8f61a033","Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:134.0) Gecko/20100101 Firefox/134.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",215,"iad1",75,1024,"","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:27",1742952627897,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/","GET","",-1,"ljznm-1742952627642-bbbf84faeb0d","Mozilla/5.0 (X11; Linux x86_64; rv:133.0) Gecko/20100101 Firefox/133.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",-1,"iad1",-1,-1,"🔍 [vercel-adapter.js:1] Execution started
+🚀 [vercel-adapter.js:2] Vercel adapter starting...
+📁 [vercel-adapter.js:3] Current directory: /var/task
+📦 [vercel-adapter.js:4] NODE_ENV: production
+📦 [vercel-adapter.js:5] VERCEL_ENV: undefined
+📦 [vercel-adapter.js:6] VERCEL_REGION: undefined
+Failed to create debugging_logs directory: ReferenceError: Cannot access 'fs' before initialization
+    at file:///var/task/vercel-adapter.js:15:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+🔎 [vercel-adapter.js:20] Loading filesystem module
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/task/package.json' contains ""type"": ""module"". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/task/vercel-adapter.js:107:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+Node.js process exited with exit status: 1. The logs above can help with debugging the issue.","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:27",1742952627677,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/","GET","",500,"ljznm-1742952627642-bbbf84faeb0d","Mozilla/5.0 (X11; Linux x86_64; rv:133.0) Gecko/20100101 Firefox/133.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",202,"iad1",75,1024,"","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:26",1742952626497,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/favicon.ico","GET","",-1,"p2brr-1742952626232-018bbaf284dc","Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",-1,"iad1",-1,-1,"🔍 [vercel-adapter.js:1] Execution started
+🚀 [vercel-adapter.js:2] Vercel adapter starting...
+📁 [vercel-adapter.js:3] Current directory: /var/task
+📦 [vercel-adapter.js:4] NODE_ENV: production
+📦 [vercel-adapter.js:5] VERCEL_ENV: undefined
+📦 [vercel-adapter.js:6] VERCEL_REGION: undefined
+Failed to create debugging_logs directory: ReferenceError: Cannot access 'fs' before initialization
+    at file:///var/task/vercel-adapter.js:15:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+🔎 [vercel-adapter.js:20] Loading filesystem module
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/task/package.json' contains ""type"": ""module"". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/task/vercel-adapter.js:107:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+Node.js process exited with exit status: 1. The logs above can help with debugging the issue.","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:26",1742952626477,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/favicon.png","GET","",-1,"jp6nd-1742952626217-7fa3f30e8025","Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:134.0) Gecko/20100101 Firefox/134.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",-1,"iad1",-1,-1,"🔍 [vercel-adapter.js:1] Execution started
+🚀 [vercel-adapter.js:2] Vercel adapter starting...
+📁 [vercel-adapter.js:3] Current directory: /var/task
+📦 [vercel-adapter.js:4] NODE_ENV: production
+📦 [vercel-adapter.js:5] VERCEL_ENV: undefined
+📦 [vercel-adapter.js:6] VERCEL_REGION: undefined
+Failed to create debugging_logs directory: ReferenceError: Cannot access 'fs' before initialization
+    at file:///var/task/vercel-adapter.js:15:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+🔎 [vercel-adapter.js:20] Loading filesystem module
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/task/package.json' contains ""type"": ""module"". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/task/vercel-adapter.js:107:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+Node.js process exited with exit status: 1. The logs above can help with debugging the issue.","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:26",1742952626271,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/favicon.ico","GET","",500,"p2brr-1742952626232-018bbaf284dc","Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",204,"iad1",75,1024,"","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:26",1742952626257,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/favicon.png","GET","",500,"jp6nd-1742952626217-7fa3f30e8025","Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:134.0) Gecko/20100101 Firefox/134.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",196,"iad1",75,1024,"","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:25",1742952625155,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/favicon.ico","GET","",-1,"f4gxd-1742952624909-a4bc5168bd5b","Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",-1,"iad1",-1,-1,"🔍 [vercel-adapter.js:1] Execution started
+🚀 [vercel-adapter.js:2] Vercel adapter starting...
+📁 [vercel-adapter.js:3] Current directory: /var/task
+📦 [vercel-adapter.js:4] NODE_ENV: production
+📦 [vercel-adapter.js:5] VERCEL_ENV: undefined
+📦 [vercel-adapter.js:6] VERCEL_REGION: undefined
+Failed to create debugging_logs directory: ReferenceError: Cannot access 'fs' before initialization
+    at file:///var/task/vercel-adapter.js:15:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+🔎 [vercel-adapter.js:20] Loading filesystem module
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/task/package.json' contains ""type"": ""module"". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/task/vercel-adapter.js:107:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+Node.js process exited with exit status: 1. The logs above can help with debugging the issue.","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:25",1742952625154,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/favicon.png","GET","",-1,"t46kv-1742952624893-966df8340272","Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:134.0) Gecko/20100101 Firefox/134.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",-1,"iad1",-1,-1,"🔍 [vercel-adapter.js:1] Execution started
+🚀 [vercel-adapter.js:2] Vercel adapter starting...
+📁 [vercel-adapter.js:3] Current directory: /var/task
+📦 [vercel-adapter.js:4] NODE_ENV: production
+📦 [vercel-adapter.js:5] VERCEL_ENV: undefined
+📦 [vercel-adapter.js:6] VERCEL_REGION: undefined
+Failed to create debugging_logs directory: ReferenceError: Cannot access 'fs' before initialization
+    at file:///var/task/vercel-adapter.js:15:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+🔎 [vercel-adapter.js:20] Loading filesystem module
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/task/package.json' contains ""type"": ""module"". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/task/vercel-adapter.js:107:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+Node.js process exited with exit status: 1. The logs above can help with debugging the issue.","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:24",1742952624944,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/favicon.ico","GET","",500,"f4gxd-1742952624909-a4bc5168bd5b","Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",194,"iad1",75,1024,"","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:24",1742952624930,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/favicon.png","GET","",500,"t46kv-1742952624893-966df8340272","Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:134.0) Gecko/20100101 Firefox/134.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",205,"iad1",75,1024,"","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:24",1742952624856,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/favicon.ico","GET","",-1,"zh5wx-1742952624609-698abb52c736","Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:134.0) Gecko/20100101 Firefox/134.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",-1,"iad1",-1,-1,"🔍 [vercel-adapter.js:1] Execution started
+🚀 [vercel-adapter.js:2] Vercel adapter starting...
+📁 [vercel-adapter.js:3] Current directory: /var/task
+📦 [vercel-adapter.js:4] NODE_ENV: production
+📦 [vercel-adapter.js:5] VERCEL_ENV: undefined
+📦 [vercel-adapter.js:6] VERCEL_REGION: undefined
+Failed to create debugging_logs directory: ReferenceError: Cannot access 'fs' before initialization
+    at file:///var/task/vercel-adapter.js:15:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+🔎 [vercel-adapter.js:20] Loading filesystem module
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/task/package.json' contains ""type"": ""module"". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/task/vercel-adapter.js:107:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+Node.js process exited with exit status: 1. The logs above can help with debugging the issue.","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:24",1742952624785,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/","GET","",-1,"5xbk7-1742952624527-1d26a3e0b38d","Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",-1,"iad1",-1,-1,"🔍 [vercel-adapter.js:1] Execution started
+🚀 [vercel-adapter.js:2] Vercel adapter starting...
+📁 [vercel-adapter.js:3] Current directory: /var/task
+📦 [vercel-adapter.js:4] NODE_ENV: production
+📦 [vercel-adapter.js:5] VERCEL_ENV: undefined
+📦 [vercel-adapter.js:6] VERCEL_REGION: undefined
+Failed to create debugging_logs directory: ReferenceError: Cannot access 'fs' before initialization
+    at file:///var/task/vercel-adapter.js:15:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+🔎 [vercel-adapter.js:20] Loading filesystem module
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/task/package.json' contains ""type"": ""module"". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/task/vercel-adapter.js:107:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+Node.js process exited with exit status: 1. The logs above can help with debugging the issue.","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:24",1742952624645,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/favicon.ico","GET","",500,"zh5wx-1742952624609-698abb52c736","Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:134.0) Gecko/20100101 Firefox/134.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",197,"iad1",75,1024,"","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:24",1742952624571,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/","GET","",500,"5xbk7-1742952624527-1d26a3e0b38d","Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",197,"iad1",75,1024,"","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:23",1742952623481,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/","GET","",-1,"9rpjp-1742952623223-84172735fde3","Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",-1,"iad1",-1,-1,"🔍 [vercel-adapter.js:1] Execution started
+🚀 [vercel-adapter.js:2] Vercel adapter starting...
+📁 [vercel-adapter.js:3] Current directory: /var/task
+📦 [vercel-adapter.js:4] NODE_ENV: production
+📦 [vercel-adapter.js:5] VERCEL_ENV: undefined
+📦 [vercel-adapter.js:6] VERCEL_REGION: undefined
+Failed to create debugging_logs directory: ReferenceError: Cannot access 'fs' before initialization
+    at file:///var/task/vercel-adapter.js:15:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+🔎 [vercel-adapter.js:20] Loading filesystem module
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/task/package.json' contains ""type"": ""module"". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/task/vercel-adapter.js:107:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+Node.js process exited with exit status: 1. The logs above can help with debugging the issue.","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:23",1742952623264,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/","GET","",500,"9rpjp-1742952623223-84172735fde3","Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",200,"iad1",75,1024,"","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:22",1742952622757,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/","GET","",-1,"tqtjv-1742952622496-f1693cd59c13","Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:134.0) Gecko/20100101 Firefox/134.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",-1,"iad1",-1,-1,"🔍 [vercel-adapter.js:1] Execution started
+🚀 [vercel-adapter.js:2] Vercel adapter starting...
+📁 [vercel-adapter.js:3] Current directory: /var/task
+📦 [vercel-adapter.js:4] NODE_ENV: production
+📦 [vercel-adapter.js:5] VERCEL_ENV: undefined
+📦 [vercel-adapter.js:6] VERCEL_REGION: undefined
+Failed to create debugging_logs directory: ReferenceError: Cannot access 'fs' before initialization
+    at file:///var/task/vercel-adapter.js:15:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+🔎 [vercel-adapter.js:20] Loading filesystem module
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/task/package.json' contains ""type"": ""module"". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/task/vercel-adapter.js:107:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+Node.js process exited with exit status: 1. The logs above can help with debugging the issue.","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:22",1742952622533,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/","GET","",500,"tqtjv-1742952622496-f1693cd59c13","Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:134.0) Gecko/20100101 Firefox/134.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",207,"iad1",75,1024,"","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:22",1742952622490,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/favicon.ico","GET","",-1,"xv2nh-1742952622241-203c35dcd321","Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:134.0) Gecko/20100101 Firefox/134.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",-1,"iad1",-1,-1,"🔍 [vercel-adapter.js:1] Execution started
+🚀 [vercel-adapter.js:2] Vercel adapter starting...
+📁 [vercel-adapter.js:3] Current directory: /var/task
+📦 [vercel-adapter.js:4] NODE_ENV: production
+📦 [vercel-adapter.js:5] VERCEL_ENV: undefined
+📦 [vercel-adapter.js:6] VERCEL_REGION: undefined
+Failed to create debugging_logs directory: ReferenceError: Cannot access 'fs' before initialization
+    at file:///var/task/vercel-adapter.js:15:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+🔎 [vercel-adapter.js:20] Loading filesystem module
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/task/package.json' contains ""type"": ""module"". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/task/vercel-adapter.js:107:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+Node.js process exited with exit status: 1. The logs above can help with debugging the issue.","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:22",1742952622277,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/favicon.ico","GET","",500,"xv2nh-1742952622241-203c35dcd321","Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:134.0) Gecko/20100101 Firefox/134.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",194,"iad1",75,1024,"","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:21",1742952621164,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/favicon.ico","GET","",-1,"47f2k-1742952620879-1cac39399869","Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:134.0) Gecko/20100101 Firefox/134.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",-1,"iad1",-1,-1,"🔍 [vercel-adapter.js:1] Execution started
+🚀 [vercel-adapter.js:2] Vercel adapter starting...
+📁 [vercel-adapter.js:3] Current directory: /var/task
+📦 [vercel-adapter.js:4] NODE_ENV: production
+📦 [vercel-adapter.js:5] VERCEL_ENV: undefined
+📦 [vercel-adapter.js:6] VERCEL_REGION: undefined
+Failed to create debugging_logs directory: ReferenceError: Cannot access 'fs' before initialization
+    at file:///var/task/vercel-adapter.js:15:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+🔎 [vercel-adapter.js:20] Loading filesystem module
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/task/package.json' contains ""type"": ""module"". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/task/vercel-adapter.js:107:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+Node.js process exited with exit status: 1. The logs above can help with debugging the issue.","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:20",1742952620944,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/favicon.ico","GET","",500,"47f2k-1742952620879-1cac39399869","Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:134.0) Gecko/20100101 Firefox/134.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",205,"iad1",75,1024,"","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:20",1742952620755,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/","GET","",-1,"chlkl-1742952620495-6e7c374467b0","Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:134.0) Gecko/20100101 Firefox/134.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",-1,"iad1",-1,-1,"🔍 [vercel-adapter.js:1] Execution started
+🚀 [vercel-adapter.js:2] Vercel adapter starting...
+📁 [vercel-adapter.js:3] Current directory: /var/task
+📦 [vercel-adapter.js:4] NODE_ENV: production
+📦 [vercel-adapter.js:5] VERCEL_ENV: undefined
+📦 [vercel-adapter.js:6] VERCEL_REGION: undefined
+Failed to create debugging_logs directory: ReferenceError: Cannot access 'fs' before initialization
+    at file:///var/task/vercel-adapter.js:15:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+🔎 [vercel-adapter.js:20] Loading filesystem module
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/task/package.json' contains ""type"": ""module"". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/task/vercel-adapter.js:107:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+Node.js process exited with exit status: 1. The logs above can help with debugging the issue.","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:20",1742952620533,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/","GET","",500,"chlkl-1742952620495-6e7c374467b0","Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:134.0) Gecko/20100101 Firefox/134.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",206,"iad1",75,1024,"","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:20",1742952620379,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/","GET","",-1,"87vm8-1742952620116-3ab180d64be2","Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:134.0) Gecko/20100101 Firefox/134.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",-1,"iad1",-1,-1,"🔍 [vercel-adapter.js:1] Execution started
+🚀 [vercel-adapter.js:2] Vercel adapter starting...
+📁 [vercel-adapter.js:3] Current directory: /var/task
+📦 [vercel-adapter.js:4] NODE_ENV: production
+📦 [vercel-adapter.js:5] VERCEL_ENV: undefined
+📦 [vercel-adapter.js:6] VERCEL_REGION: undefined
+Failed to create debugging_logs directory: ReferenceError: Cannot access 'fs' before initialization
+    at file:///var/task/vercel-adapter.js:15:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+🔎 [vercel-adapter.js:20] Loading filesystem module
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/task/package.json' contains ""type"": ""module"". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/task/vercel-adapter.js:107:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+Node.js process exited with exit status: 1. The logs above can help with debugging the issue.","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:20",1742952620152,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/","GET","",500,"87vm8-1742952620116-3ab180d64be2","Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:134.0) Gecko/20100101 Firefox/134.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",212,"iad1",75,1024,"","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:20",1742952620140,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/favicon.ico","GET","",-1,"rmtsx-1742952619873-7e351f86c076","vercel-screenshot/1.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",-1,"iad1",-1,-1,"🔍 [vercel-adapter.js:1] Execution started
+🚀 [vercel-adapter.js:2] Vercel adapter starting...
+📁 [vercel-adapter.js:3] Current directory: /var/task
+📦 [vercel-adapter.js:4] NODE_ENV: production
+📦 [vercel-adapter.js:5] VERCEL_ENV: undefined
+📦 [vercel-adapter.js:6] VERCEL_REGION: undefined
+Failed to create debugging_logs directory: ReferenceError: Cannot access 'fs' before initialization
+    at file:///var/task/vercel-adapter.js:15:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+🔎 [vercel-adapter.js:20] Loading filesystem module
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/task/package.json' contains ""type"": ""module"". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/task/vercel-adapter.js:107:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+Node.js process exited with exit status: 1. The logs above can help with debugging the issue.","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:19",1742952619910,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/favicon.ico","GET","",500,"rmtsx-1742952619873-7e351f86c076","vercel-screenshot/1.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",210,"iad1",75,1024,"","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:19",1742952619803,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/","GET","",-1,"bq4cj-1742952619535-22c78a06ceb4","vercel-screenshot/1.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",-1,"iad1",-1,-1,"🔍 [vercel-adapter.js:1] Execution started
+🚀 [vercel-adapter.js:2] Vercel adapter starting...
+📁 [vercel-adapter.js:3] Current directory: /var/task
+📦 [vercel-adapter.js:4] NODE_ENV: production
+📦 [vercel-adapter.js:5] VERCEL_ENV: undefined
+📦 [vercel-adapter.js:6] VERCEL_REGION: undefined
+Failed to create debugging_logs directory: ReferenceError: Cannot access 'fs' before initialization
+    at file:///var/task/vercel-adapter.js:15:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+🔎 [vercel-adapter.js:20] Loading filesystem module
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/task/package.json' contains ""type"": ""module"". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/task/vercel-adapter.js:107:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+Node.js process exited with exit status: 1. The logs above can help with debugging the issue.","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:19",1742952619747,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/favicon.ico","GET","",-1,"6gc76-1742952619483-2efa837afc5d","vercel-screenshot/1.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",-1,"iad1",-1,-1,"🔍 [vercel-adapter.js:1] Execution started
+🚀 [vercel-adapter.js:2] Vercel adapter starting...
+📁 [vercel-adapter.js:3] Current directory: /var/task
+📦 [vercel-adapter.js:4] NODE_ENV: production
+📦 [vercel-adapter.js:5] VERCEL_ENV: undefined
+📦 [vercel-adapter.js:6] VERCEL_REGION: undefined
+Failed to create debugging_logs directory: ReferenceError: Cannot access 'fs' before initialization
+    at file:///var/task/vercel-adapter.js:15:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+🔎 [vercel-adapter.js:20] Loading filesystem module
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/task/package.json' contains ""type"": ""module"". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/task/vercel-adapter.js:107:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+Node.js process exited with exit status: 1. The logs above can help with debugging the issue.","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:19",1742952619584,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/","GET","",500,"bq4cj-1742952619535-22c78a06ceb4","vercel-screenshot/1.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",199,"iad1",75,1024,"","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:19",1742952619520,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/favicon.ico","GET","",500,"6gc76-1742952619483-2efa837afc5d","vercel-screenshot/1.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",210,"iad1",75,1024,"","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:19",1742952619453,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/","GET","",-1,"95j5z-1742952618826-38553d71ca27","Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:134.0) Gecko/20100101 Firefox/134.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",-1,"iad1",-1,-1,"🔍 [vercel-adapter.js:1] Execution started
+🚀 [vercel-adapter.js:2] Vercel adapter starting...
+📁 [vercel-adapter.js:3] Current directory: /var/task
+📦 [vercel-adapter.js:4] NODE_ENV: production
+📦 [vercel-adapter.js:5] VERCEL_ENV: undefined
+📦 [vercel-adapter.js:6] VERCEL_REGION: undefined
+Failed to create debugging_logs directory: ReferenceError: Cannot access 'fs' before initialization
+    at file:///var/task/vercel-adapter.js:15:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+🔎 [vercel-adapter.js:20] Loading filesystem module
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/task/package.json' contains ""type"": ""module"". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/task/vercel-adapter.js:107:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+🔍 [vercel-adapter.js:1] Execution started
+🚀 [vercel-adapter.js:2] Vercel adapter starting...
+📁 [vercel-adapter.js:3] Current directory: /var/task
+📦 [vercel-adapter.js:4] NODE_ENV: production
+📦 [vercel-adapter.js:5] VERCEL_ENV: undefined
+📦 [vercel-adapter.js:6] VERCEL_REGION: undefined
+Failed to create debugging_logs directory: ReferenceError: Cannot access 'fs' before initialization
+    at file:///var/task/vercel-adapter.js:15:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+🔎 [vercel-adapter.js:20] Loading filesystem module
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/task/package.json' contains ""type"": ""module"". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/task/vercel-adapter.js:107:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+Node.js process exited with exit status: 1. The logs above can help with debugging the issue.","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:19",1742952619420,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/","GET","",-1,"plmrd-1742952619153-bb0cefb2f182","vercel-screenshot/1.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",-1,"iad1",-1,-1,"🔍 [vercel-adapter.js:1] Execution started
+🚀 [vercel-adapter.js:2] Vercel adapter starting...
+📁 [vercel-adapter.js:3] Current directory: /var/task
+📦 [vercel-adapter.js:4] NODE_ENV: production
+📦 [vercel-adapter.js:5] VERCEL_ENV: undefined
+📦 [vercel-adapter.js:6] VERCEL_REGION: undefined
+Failed to create debugging_logs directory: ReferenceError: Cannot access 'fs' before initialization
+    at file:///var/task/vercel-adapter.js:15:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+🔎 [vercel-adapter.js:20] Loading filesystem module
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/task/package.json' contains ""type"": ""module"". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/task/vercel-adapter.js:107:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+Node.js process exited with exit status: 1. The logs above can help with debugging the issue.","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:19",1742952619400,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/","GET","",-1,"25vfs-1742952619138-ee7c40f902fe","vercel-screenshot/1.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",-1,"iad1",-1,-1,"🔍 [vercel-adapter.js:1] Execution started
+🚀 [vercel-adapter.js:2] Vercel adapter starting...
+📁 [vercel-adapter.js:3] Current directory: /var/task
+📦 [vercel-adapter.js:4] NODE_ENV: production
+📦 [vercel-adapter.js:5] VERCEL_ENV: undefined
+📦 [vercel-adapter.js:6] VERCEL_REGION: undefined
+Failed to create debugging_logs directory: ReferenceError: Cannot access 'fs' before initialization
+    at file:///var/task/vercel-adapter.js:15:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+🔎 [vercel-adapter.js:20] Loading filesystem module
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/task/package.json' contains ""type"": ""module"". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/task/vercel-adapter.js:107:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+Node.js process exited with exit status: 1. The logs above can help with debugging the issue.","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:19",1742952619191,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/","GET","",500,"plmrd-1742952619153-bb0cefb2f182","vercel-screenshot/1.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",209,"iad1",75,1024,"","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:19",1742952619174,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/","GET","",500,"25vfs-1742952619138-ee7c40f902fe","vercel-screenshot/1.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",209,"iad1",75,1024,"","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:19",1742952619024,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/","GET","",-1,"6hk7d-1742952618738-5d8e5888f400","vercel-screenshot/1.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",-1,"iad1",-1,-1,"🔍 [vercel-adapter.js:1] Execution started
+🚀 [vercel-adapter.js:2] Vercel adapter starting...
+📁 [vercel-adapter.js:3] Current directory: /var/task
+📦 [vercel-adapter.js:4] NODE_ENV: production
+📦 [vercel-adapter.js:5] VERCEL_ENV: undefined
+📦 [vercel-adapter.js:6] VERCEL_REGION: undefined
+Failed to create debugging_logs directory: ReferenceError: Cannot access 'fs' before initialization
+    at file:///var/task/vercel-adapter.js:15:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+🔎 [vercel-adapter.js:20] Loading filesystem module
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/task/package.json' contains ""type"": ""module"". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/task/vercel-adapter.js:107:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+Node.js process exited with exit status: 1. The logs above can help with debugging the issue.","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:19",1742952619007,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/","GET","",-1,"d8r84-1742952618752-59656247114d","Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:134.0) Gecko/20100101 Firefox/134.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",-1,"iad1",-1,-1,"🔍 [vercel-adapter.js:1] Execution started
+🚀 [vercel-adapter.js:2] Vercel adapter starting...
+📁 [vercel-adapter.js:3] Current directory: /var/task
+📦 [vercel-adapter.js:4] NODE_ENV: production
+📦 [vercel-adapter.js:5] VERCEL_ENV: undefined
+📦 [vercel-adapter.js:6] VERCEL_REGION: undefined
+Failed to create debugging_logs directory: ReferenceError: Cannot access 'fs' before initialization
+    at file:///var/task/vercel-adapter.js:15:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+🔎 [vercel-adapter.js:20] Loading filesystem module
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/task/package.json' contains ""type"": ""module"". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/task/vercel-adapter.js:107:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+Node.js process exited with exit status: 1. The logs above can help with debugging the issue.","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:18",1742952618864,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/","GET","",500,"95j5z-1742952618826-38553d71ca27","Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:134.0) Gecko/20100101 Firefox/134.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",220,"iad1",75,1024,"","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:18",1742952618789,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/","GET","",500,"d8r84-1742952618752-59656247114d","Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:134.0) Gecko/20100101 Firefox/134.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",202,"iad1",75,1024,"","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:18",1742952618773,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/","GET","",500,"6hk7d-1742952618738-5d8e5888f400","vercel-screenshot/1.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",235,"iad1",75,1024,"","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:17",1742952617068,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/","GET","",-1,"5r6zp-1742952616646-7201fbe0a87b","vercel-screenshot/1.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",-1,"iad1",-1,-1,"🔍 [vercel-adapter.js:1] Execution started
+🚀 [vercel-adapter.js:2] Vercel adapter starting...
+📁 [vercel-adapter.js:3] Current directory: /var/task
+📦 [vercel-adapter.js:4] NODE_ENV: production
+📦 [vercel-adapter.js:5] VERCEL_ENV: undefined
+📦 [vercel-adapter.js:6] VERCEL_REGION: undefined
+Failed to create debugging_logs directory: ReferenceError: Cannot access 'fs' before initialization
+    at file:///var/task/vercel-adapter.js:15:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+🔎 [vercel-adapter.js:20] Loading filesystem module
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/task/package.json' contains ""type"": ""module"". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/task/vercel-adapter.js:107:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+Node.js process exited with exit status: 1. The logs above can help with debugging the issue.","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:16",1742952616811,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/","GET","",500,"5r6zp-1742952616646-7201fbe0a87b","vercel-screenshot/1.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",236,"iad1",75,1024,"","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:16",1742952616618,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/","GET","",-1,"ndzlw-1742952616242-71418fc9ebae","vercel-screenshot/1.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",-1,"iad1",-1,-1,"🔍 [vercel-adapter.js:1] Execution started
+🚀 [vercel-adapter.js:2] Vercel adapter starting...
+📁 [vercel-adapter.js:3] Current directory: /var/task
+📦 [vercel-adapter.js:4] NODE_ENV: production
+📦 [vercel-adapter.js:5] VERCEL_ENV: undefined
+📦 [vercel-adapter.js:6] VERCEL_REGION: undefined
+Failed to create debugging_logs directory: ReferenceError: Cannot access 'fs' before initialization
+    at file:///var/task/vercel-adapter.js:15:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+🔎 [vercel-adapter.js:20] Loading filesystem module
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/task/package.json' contains ""type"": ""module"". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/task/vercel-adapter.js:107:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+Node.js process exited with exit status: 1. The logs above can help with debugging the issue.","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:16",1742952616390,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/","GET","",500,"ndzlw-1742952616242-71418fc9ebae","vercel-screenshot/1.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",211,"iad1",75,1024,"","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:15",1742952615576,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/","GET","",-1,"7ggff-1742952614720-5be67ac7fc0d","vercel-screenshot/1.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",-1,"iad1",-1,-1,"🔍 [vercel-adapter.js:1] Execution started
+🚀 [vercel-adapter.js:2] Vercel adapter starting...
+📁 [vercel-adapter.js:3] Current directory: /var/task
+📦 [vercel-adapter.js:4] NODE_ENV: production
+📦 [vercel-adapter.js:5] VERCEL_ENV: undefined
+📦 [vercel-adapter.js:6] VERCEL_REGION: undefined
+Failed to create debugging_logs directory: ReferenceError: Cannot access 'fs' before initialization
+    at file:///var/task/vercel-adapter.js:15:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+🔎 [vercel-adapter.js:20] Loading filesystem module
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/task/package.json' contains ""type"": ""module"". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/task/vercel-adapter.js:107:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+Node.js process exited with exit status: 1. The logs above can help with debugging the issue.
+🔍 [vercel-adapter.js:1] Execution started
+🚀 [vercel-adapter.js:2] Vercel adapter starting...
+📁 [vercel-adapter.js:3] Current directory: /var/task
+📦 [vercel-adapter.js:4] NODE_ENV: production
+📦 [vercel-adapter.js:5] VERCEL_ENV: undefined
+📦 [vercel-adapter.js:6] VERCEL_REGION: undefined
+Failed to create debugging_logs directory: ReferenceError: Cannot access 'fs' before initialization
+    at file:///var/task/vercel-adapter.js:15:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+🔎 [vercel-adapter.js:20] Loading filesystem module
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/task/package.json' contains ""type"": ""module"". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/task/vercel-adapter.js:107:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+Node.js process exited with exit status: 1. The logs above can help with debugging the issue.","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:15",1742952615170,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/","GET","",-1,"pdvnp-1742952614798-ce43fa3bba3b","vercel-screenshot/1.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",-1,"iad1",-1,-1,"🔍 [vercel-adapter.js:1] Execution started
+🚀 [vercel-adapter.js:2] Vercel adapter starting...
+📁 [vercel-adapter.js:3] Current directory: /var/task
+📦 [vercel-adapter.js:4] NODE_ENV: production
+📦 [vercel-adapter.js:5] VERCEL_ENV: undefined
+📦 [vercel-adapter.js:6] VERCEL_REGION: undefined
+Failed to create debugging_logs directory: ReferenceError: Cannot access 'fs' before initialization
+    at file:///var/task/vercel-adapter.js:15:3
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+🔎 [vercel-adapter.js:20] Loading filesystem module
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and '/var/task/package.json' contains ""type"": ""module"". To treat it as a CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///var/task/vercel-adapter.js:107:12
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async d (/opt/rust/nodejs.js:16:18048)
+Node.js process exited with exit status: 1. The logs above can help with debugging the issue.","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:14",1742952614960,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/","GET","",500,"pdvnp-1742952614798-ce43fa3bba3b","vercel-screenshot/1.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",193,"iad1",75,1024,"","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"
+"2025-03-26 01:30:14",1742952614958,"sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app/","GET","",500,"7ggff-1742952614720-5be67ac7fc0d","vercel-screenshot/1.0","error","production","","MISS","lambda","/vercel-adapter.js","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","sell-my-seats-oyvuc4i2r-rsgenacks-projects.vercel.app","dpl_8nP7cC3ga9E8btqwL8HiCZfDZJsD",224,"iad1",75,1024,"","prj_m5DxOCoSkMcwdJsG7CfFOpvMTqpR"

@@ -3,77 +3,17 @@
   "builds": [
     {
       "src": "api/index.js",
-      "use": "@vercel/node",
-      "config": {
-        "nodeVersion": "18.x",
-        "includeFiles": [
-          "api/**",
-          "dist/**",
-          "src/**",
-          "server/**",
-          "client/**",
-          "public/**"
-        ],
-        "memory": 1024,
-        "maxDuration": 10
-      }
-    },
-    {
-      "src": "public/**",
-      "use": "@vercel/static"
+      "use": "@vercel/node"
     }
   ],
   "routes": [
-    {
-      "src": "/favicon.ico",
-      "dest": "/public/favicon.ico"
-    },
-    {
-      "src": "/apple-touch-icon.png",
-      "dest": "/public/apple-touch-icon.png"
-    },
-    {
-      "src": "/favicon-32x32.png",
-      "dest": "/public/favicon-32x32.png"
-    },
-    {
-      "src": "/favicon-16x16.png",
-      "dest": "/public/favicon-16x16.png"
-    },
-    {
-      "src": "/android-chrome-192x192.png",
-      "dest": "/public/android-chrome-192x192.png"
-    },
-    {
-      "src": "/android-chrome-512x512.png",
-      "dest": "/public/android-chrome-512x512.png"
-    },
-    {
-      "src": "/site.webmanifest",
-      "dest": "/public/site.webmanifest"
-    },
     {
       "src": "/api/(.*)",
       "dest": "/api/index.js"
     },
     {
-      "src": "/assets/(.*)",
-      "dest": "/public/assets/$1"
-    },
-    {
       "src": "/(.*)",
       "dest": "/api/index.js"
     }
-  ],
-  "env": {
-    "NODE_ENV": "production",
-    "VERCEL": "1"
-  },
-  "crons": [],
-  "framework": null,
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "installCommand": "npm install",
-  "devCommand": "npm run dev",
-  "regions": ["iad1"]
+  ]
 } 

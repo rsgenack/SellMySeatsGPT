@@ -28,33 +28,28 @@ vercelAdapter.writeLog('startup.json', {
   }
 });
 
-// Export the request handler
+// Simple API handler for Vercel
 export default async function handler(req, res) {
-  try {
-    // Log request details
-    vercelAdapter.writeLog(`request-${Date.now()}.json`, {
-      timestamp: new Date().toISOString(),
-      method: req.method,
-      url: req.url,
-      headers: req.headers
-    });
+  console.log('Received request:', {
+    method: req.method,
+    url: req.url,
+    timestamp: new Date().toISOString()
+  });
 
-    // Basic response for now
+  try {
+    // Basic health check response
     res.status(200).json({
       status: 'ok',
-      message: 'Vercel API is running',
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    // Log error
-    vercelAdapter.writeLog(`error-${Date.now()}.json`, {
+      message: 'API is running',
       timestamp: new Date().toISOString(),
-      error: {
-        message: error.message,
-        stack: error.stack
+      environment: {
+        NODE_ENV: process.env.NODE_ENV,
+        VERCEL_ENV: process.env.VERCEL_ENV,
+        VERCEL_REGION: process.env.VERCEL_REGION
       }
     });
-
+  } catch (error) {
+    console.error('Error handling request:', error);
     res.status(500).json({
       status: 'error',
       message: 'Internal server error',
