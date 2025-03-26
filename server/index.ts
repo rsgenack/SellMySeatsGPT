@@ -8,9 +8,15 @@ import { resolve } from 'path';
 // Load environment variables with more robust path resolution
 config({ path: resolve(process.cwd(), '.env') });
 
-// Log important environment variables for debugging (masking sensitive parts)
+// Debug environment in production
 console.log('=== Environment Configuration ===');
 console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('VERCEL_ENV:', process.env.VERCEL_ENV);
+console.log('VERCEL_REGION:', process.env.VERCEL_REGION);
+console.log('Current directory:', process.cwd());
+console.log('__dirname:', __dirname);
+
+// Check for critical environment variables
 const dbUrl = process.env.DATABASE_URL;
 if (dbUrl) {
   const maskedUrl = dbUrl.replace(/:([^:@]+)@/, ':****@');
@@ -37,7 +43,8 @@ app.use((req, res, next) => {
     process.env.CUSTOM_DOMAIN,  // Custom domain
     process.env.HEROKU_APP_URL, // Heroku app URL
     'http://localhost:5000',    // Local development
-    'https://sellmyseats.rgnack.com' // Our Cloudflare domain
+    'https://sellmyseats.rgnack.com', // Our Cloudflare domain
+    'https://sell-my-seats-gpt.vercel.app' // Vercel domain
   ].filter(Boolean); // Remove undefined values
 
   const origin = req.headers.origin;
@@ -62,13 +69,16 @@ app.use((req, res, next) => {
 
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      log(logLine);
-    }
+    let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
+    log(logLine);
   });
 
   next();
+});
+
+// Add a health check endpoint for Vercel
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 // Export adapter for Cloudflare Workers

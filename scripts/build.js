@@ -14,7 +14,9 @@ async function build() {
   // Check if .env file exists
   const projectRoot = path.join(__dirname, '..');
   const envPath = path.join(projectRoot, '.env');
-  if (!fs.existsSync(envPath)) {
+  
+  // Only create template .env if not in Vercel deployment
+  if (!process.env.VERCEL && !fs.existsSync(envPath)) {
     console.warn('⚠️ Warning: .env file not found. Creating a template .env file...');
     // Create a template .env file with placeholders
     const templateEnv = `# Database Configuration
@@ -38,7 +40,7 @@ GOOGLE_TOKEN={"access_token":"your-access-token","refresh_token":"your-refresh-t
     fs.writeFileSync(envPath, templateEnv);
     console.log('✅ Created template .env file. Please update it with your actual values.');
   } else {
-    console.log('✅ .env file found.');
+    console.log('✅ Environment configuration found or running in deployment environment.');
   }
 
   try {
@@ -55,13 +57,25 @@ GOOGLE_TOKEN={"access_token":"your-access-token","refresh_token":"your-refresh-t
 
     // Build the server
     console.log('📦 Building server...');
-    await execAsync('esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist');
-    console.log('✅ Server build complete');
+    try {
+      await execAsync('esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist');
+      console.log('✅ Server build complete');
+    } catch (error) {
+      console.error('❌ Server build failed:', error);
+      // If esbuild fails, fall back to copying the server file directly
+      console.log('Attempting fallback build method...');
+      await execAsync('tsc server/index.ts --outDir dist --moduleResolution node --esModuleInterop --target es2020 --module es2020');
+      console.log('✅ Server build complete (fallback method)');
+    }
 
-    // Copy .env file to dist directory
-    const distEnvPath = path.join(distDir, '.env');
-    fs.copyFileSync(envPath, distEnvPath);
-    console.log('📄 Copied .env file to dist directory');
+    // Copy .env file to dist directory (only in dev/local builds)
+    if (!process.env.VERCEL && fs.existsSync(envPath)) {
+      const distEnvPath = path.join(distDir, '.env');
+      fs.copyFileSync(envPath, distEnvPath);
+      console.log('📄 Copied .env file to dist directory');
+    } else {
+      console.log('📄 Skipping .env copy (not needed in deployment)');
+    }
 
     // Create a simplified start script in the dist folder
     const startScript = `
@@ -72,10 +86,14 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Load environment variables from .env file in the same directory
-config({ path: path.join(__dirname, '.env') });
+try {
+  config({ path: path.join(__dirname, '.env') });
+  console.log('Environment variables loaded from local .env file');
+} catch (error) {
+  console.log('Using environment variables from deployment platform');
+}
 
 // Log environment status
-console.log('Environment variables loaded');
 console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
 
 // Import the server
@@ -85,6 +103,16 @@ import './index.js';
     const startScriptPath = path.join(distDir, 'start.js');
     fs.writeFileSync(startScriptPath, startScript);
     console.log('📄 Created start script in dist directory');
+
+    // Copy vercel.json to the dist directory if in Vercel deployment
+    if (process.env.VERCEL) {
+      const vercelConfigPath = path.join(projectRoot, 'vercel.json');
+      if (fs.existsSync(vercelConfigPath)) {
+        const distVercelConfigPath = path.join(distDir, 'vercel.json');
+        fs.copyFileSync(vercelConfigPath, distVercelConfigPath);
+        console.log('📄 Copied vercel.json to dist directory for Vercel deployment');
+      }
+    }
 
     console.log('🎉 Build process completed successfully!');
     console.log('To start the application in production mode:');

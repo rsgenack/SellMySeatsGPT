@@ -2,17 +2,39 @@
   "version": 2,
   "builds": [
     {
-      "src": "dist/start.js",
-      "use": "@vercel/node"
+      "src": "vercel-adapter.js",
+      "use": "@vercel/node",
+      "config": {
+        "nodeVersion": "18.x",
+        "includeFiles": ["dist/**"]
+      }
     }
   ],
   "routes": [
     {
+      "src": "/api/(.*)",
+      "dest": "vercel-adapter.js"
+    },
+    {
       "src": "/(.*)",
-      "dest": "dist/start.js"
+      "dest": "vercel-adapter.js"
     }
   ],
   "env": {
     "NODE_ENV": "production"
-  }
+  },
+  "functions": {
+    "vercel-adapter.js": {
+      "memory": 1024,
+      "maxDuration": 10
+    }
+  },
+  "crons": [],
+  "framework": null,
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "installCommand": "npm install",
+  "devCommand": "npm run dev",
+  "regions": ["iad1"],
+  "nodeCompatibilityFlag": true
 } 
