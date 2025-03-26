@@ -10,10 +10,23 @@ const execAsync = promisify(exec);
 
 async function build() {
   console.log('🔨 Starting build process...');
+  console.log('📦 NODE_ENV:', process.env.NODE_ENV);
+  console.log('📦 VERCEL_ENV:', process.env.VERCEL_ENV);
+  console.log('📁 Current directory:', process.cwd());
+  console.log('📁 Script directory:', __dirname);
+  
+  try {
+    // List directories to verify structure
+    console.log('📂 Current directory contents:', fs.readdirSync(process.cwd()).join(', '));
+  } catch (error) {
+    console.error('❌ Error listing directory:', error);
+  }
   
   // Check if .env file exists
   const projectRoot = path.join(__dirname, '..');
   const envPath = path.join(projectRoot, '.env');
+  
+  console.log('🔍 Looking for .env file at:', envPath);
   
   // Only create template .env if not in Vercel deployment
   if (!process.env.VERCEL && !fs.existsSync(envPath)) {
@@ -41,31 +54,72 @@ GOOGLE_TOKEN={"access_token":"your-access-token","refresh_token":"your-refresh-t
     console.log('✅ Created template .env file. Please update it with your actual values.');
   } else {
     console.log('✅ Environment configuration found or running in deployment environment.');
+    if (process.env.VERCEL) {
+      console.log('🔑 Running in Vercel environment. Environment variables should be configured in Vercel dashboard.');
+    }
   }
 
   try {
     // Ensure dist directory exists
     const distDir = path.join(projectRoot, 'dist');
+    console.log('📁 Creating dist directory at:', distDir);
+    
     if (!fs.existsSync(distDir)) {
       fs.mkdirSync(distDir, { recursive: true });
+      console.log('✅ Created dist directory');
+    } else {
+      console.log('✅ Dist directory already exists');
     }
 
     // Build the client
     console.log('📦 Building client...');
-    await execAsync('vite build');
-    console.log('✅ Client build complete');
+    try {
+      const { stdout: clientBuildOutput, stderr: clientBuildError } = await execAsync('vite build');
+      console.log('📄 Client build output:', clientBuildOutput);
+      if (clientBuildError) {
+        console.warn('⚠️ Client build warnings:', clientBuildError);
+      }
+      console.log('✅ Client build complete');
+    } catch (error) {
+      console.error('❌ Client build failed:', error.message);
+      console.error('📄 Build error details:', error.stderr);
+      throw new Error('Client build failed');
+    }
 
     // Build the server
     console.log('📦 Building server...');
     try {
-      await execAsync('esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist');
+      const { stdout: serverBuildOutput, stderr: serverBuildError } = await execAsync('esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist');
+      console.log('📄 Server build output:', serverBuildOutput);
+      if (serverBuildError) {
+        console.warn('⚠️ Server build warnings:', serverBuildError);
+      }
       console.log('✅ Server build complete');
     } catch (error) {
-      console.error('❌ Server build failed:', error);
+      console.error('❌ Server build failed with esbuild:', error.message);
+      console.error('📄 Build error details:', error.stderr);
+      
       // If esbuild fails, fall back to copying the server file directly
-      console.log('Attempting fallback build method...');
-      await execAsync('tsc server/index.ts --outDir dist --moduleResolution node --esModuleInterop --target es2020 --module es2020');
-      console.log('✅ Server build complete (fallback method)');
+      console.log('⚠️ Attempting fallback build method with tsc...');
+      try {
+        const { stdout: tscOutput, stderr: tscError } = await execAsync('tsc server/index.ts --outDir dist --moduleResolution node --esModuleInterop --target es2020 --module es2020');
+        console.log('📄 TSC output:', tscOutput);
+        if (tscError) {
+          console.warn('⚠️ TSC warnings:', tscError);
+        }
+        console.log('✅ Server build complete (fallback method)');
+      } catch (tscError) {
+        console.error('❌ Both build methods failed. Server build error with tsc:', tscError);
+        console.error('📄 TSC error details:', tscError.stderr);
+        
+        // Last resort: copy the typescript file directly and rely on ts-node in production
+        console.log('⚠️ Attempting last resort: copying TS files directly...');
+        fs.copyFileSync(
+          path.join(projectRoot, 'server/index.ts'), 
+          path.join(distDir, 'index.ts')
+        );
+        console.log('✅ Copied TypeScript files directly as last resort');
+      }
     }
 
     // Copy .env file to dist directory (only in dev/local builds)
@@ -82,22 +136,59 @@ GOOGLE_TOKEN={"access_token":"your-access-token","refresh_token":"your-refresh-t
 import { config } from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Load environment variables from .env file in the same directory
+console.log('🚀 Starting application...');
+console.log('📁 Current directory:', process.cwd());
+console.log('📁 Script directory:', __dirname);
+console.log('📦 NODE_ENV:', process.env.NODE_ENV);
+console.log('📦 VERCEL_ENV:', process.env.VERCEL_ENV);
+
+// List directories to verify structure
 try {
-  config({ path: path.join(__dirname, '.env') });
-  console.log('Environment variables loaded from local .env file');
+  console.log('📂 Current directory contents:', fs.readdirSync(process.cwd()).join(', '));
+  console.log('📂 Script directory contents:', fs.readdirSync(__dirname).join(', '));
 } catch (error) {
-  console.log('Using environment variables from deployment platform');
+  console.error('❌ Error listing directory:', error);
 }
 
-// Log environment status
-console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
+// Load environment variables from .env file in the same directory
+try {
+  const envPath = path.join(__dirname, '.env');
+  console.log('🔍 Looking for .env file at:', envPath);
+  if (fs.existsSync(envPath)) {
+    config({ path: envPath });
+    console.log('✅ Environment variables loaded from local .env file');
+  } else {
+    console.log('⚠️ No local .env file found, using environment variables from deployment platform');
+  }
+} catch (error) {
+  console.error('❌ Error loading .env file:', error);
+  console.log('⚠️ Using environment variables from deployment platform');
+}
+
+// Log environment status (masked for security)
+console.log('🔑 Environment variables check:');
+console.log('- DATABASE_URL exists:', !!process.env.DATABASE_URL);
+console.log('- PGHOST exists:', !!process.env.PGHOST);
+console.log('- PGUSER exists:', !!process.env.PGUSER);
+console.log('- PGDATABASE exists:', !!process.env.PGDATABASE);
+console.log('- PGPORT exists:', !!process.env.PGPORT);
+console.log('- PGPASSWORD exists:', !!process.env.PGPASSWORD);
 
 // Import the server
-import './index.js';
+try {
+  console.log('📥 Importing server...');
+  import('./index.js').catch(error => {
+    console.error('❌ Error importing server:', error);
+    process.exit(1);
+  });
+} catch (error) {
+  console.error('❌ Fatal error importing server:', error);
+  process.exit(1);
+}
 `;
 
     const startScriptPath = path.join(distDir, 'start.js');
@@ -114,6 +205,9 @@ import './index.js';
       }
     }
 
+    // Log the final dist directory contents
+    console.log('📂 Final dist directory contents:', fs.readdirSync(distDir).join(', '));
+
     console.log('🎉 Build process completed successfully!');
     console.log('To start the application in production mode:');
     console.log('1. Update the .env file with your production credentials');
@@ -124,7 +218,8 @@ import './index.js';
   }
 }
 
+console.log('🚀 Starting build script execution...');
 build().catch(error => {
-  console.error('Unhandled error during build:', error);
+  console.error('❌ Unhandled error during build:', error);
   process.exit(1);
 }); 
