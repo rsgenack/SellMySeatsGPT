@@ -116,4 +116,8 @@ This application can be deployed to Heroku or any other Node.js hosting platform
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Deployment
+
+Last deployment: 2023-07-04T14:25:30.123Z 
